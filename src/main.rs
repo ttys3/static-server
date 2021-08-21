@@ -1,31 +1,28 @@
 use axum::{http::StatusCode, Router};
-use std::{convert::Infallible, net::SocketAddr, fs};
-use tower_http::{trace::TraceLayer};
+use std::{convert::Infallible, fs, net::SocketAddr};
+use tower_http::trace::TraceLayer;
 
 // use axum::{extract::Path as extractPath};
 
+use crate::ResponseType::{BadRequest, DownloadFile, IndexPage};
 use askama::Template;
+use axum::body::Body;
+use axum::http::{header, HeaderValue, Request};
 use axum::{
     body::{Bytes, Full},
     handler::get,
-    http::{Response},
+    http::Response,
     response::{Html, IntoResponse},
 };
-use std::path::{Path, PathBuf};
-use axum::http::{Request, HeaderValue, header};
-use axum::body::Body;
-use crate::ResponseType::{BadRequest, DownloadFile, IndexPage};
 use std::fs::File;
-use std::io::{Read};
+use std::io::Read;
+use std::path::{Path, PathBuf};
 
 #[tokio::main]
 async fn main() {
     // Set the RUST_LOG, if it hasn't been explicitly defined
     if std::env::var("RUST_LOG").is_err() {
-        std::env::set_var(
-            "RUST_LOG",
-            "static_server=debug,tower_http=debug",
-        )
+        std::env::set_var("RUST_LOG", "static_server=debug,tower_http=debug")
     }
     tracing_subscriber::fmt::init();
 
@@ -54,7 +51,7 @@ async fn favicon() -> impl IntoResponse {
 
 // extractPath(the_req_path): extractPath<String>
 async fn greet(req: Request<Body>) -> impl IntoResponse {
-    let mut files:Vec<FileInfo> = Vec::new();
+    let mut files: Vec<FileInfo> = Vec::new();
 
     // build and validate the path
     // let path = the_req_path;
@@ -65,8 +62,7 @@ async fn greet(req: Request<Body>) -> impl IntoResponse {
     full_path.push(".");
     for seg in path.split('/') {
         if seg.starts_with("..") || seg.contains('\\') {
-            return HtmlTemplate(HelloTemplate{
-                the_type: "error".to_string(),
+            return HtmlTemplate(HelloTemplate {
                 resp: BadRequest("invalid path".to_string()),
                 cur_path: path.to_string(),
             });
@@ -89,8 +85,16 @@ async fn greet(req: Request<Body>) -> impl IntoResponse {
                 let last_modified = metadata.modified().unwrap().elapsed().unwrap().as_secs();
 
                 files.push(FileInfo {
-                    name: item.file_name().unwrap_or_default().to_string_lossy().to_string(),
-                    ext: item.extension().unwrap_or_default().to_string_lossy().to_string(),
+                    name: item
+                        .file_name()
+                        .unwrap_or_default()
+                        .to_string_lossy()
+                        .to_string(),
+                    ext: item
+                        .extension()
+                        .unwrap_or_default()
+                        .to_string_lossy()
+                        .to_string(),
                     path: path.to_string_lossy().to_string(),
                     is_file: metadata.is_file(),
                     last_modified,
@@ -98,9 +102,8 @@ async fn greet(req: Request<Body>) -> impl IntoResponse {
             }
 
             let template = HelloTemplate {
-                the_type: "index".to_string(),
                 // resp: IndexPage(Tmpl{message: "ok".to_string(), is400: false, cur_path: path.to_string(), files }),
-                resp: IndexPage(Tmpl{message: "ok".to_string(), is400: false, files }),
+                resp: IndexPage(DirLister { files }),
                 cur_path: path.to_string(),
             };
             HtmlTemplate(template)
@@ -108,33 +111,28 @@ async fn greet(req: Request<Body>) -> impl IntoResponse {
         false => {
             // ServeFile::new(cur_path)
             // ServeDir::new
-            return HtmlTemplate(HelloTemplate{
-                the_type: "download".to_string(),
+            return HtmlTemplate(HelloTemplate {
                 resp: DownloadFile(path.to_string()),
                 cur_path: path.to_string(),
             });
         }
-    }
+    };
 }
 
 #[derive(Template)]
 #[template(path = "index.html")]
 struct HelloTemplate {
-   the_type: String,
-   resp: ResponseType,
-   cur_path: String,
+    resp: ResponseType,
+    cur_path: String,
 }
 
 enum ResponseType {
     BadRequest(String),
-    IndexPage(Tmpl),
+    IndexPage(DirLister),
     DownloadFile(String),
 }
 
-
-struct Tmpl {
-    message: String,
-    is400: bool,
+struct DirLister {
     files: Vec<FileInfo>,
 }
 
@@ -148,32 +146,27 @@ struct FileInfo {
 
 struct HtmlTemplate(HelloTemplate);
 
-impl IntoResponse for HtmlTemplate
-{
+impl IntoResponse for HtmlTemplate {
     type Body = Full<Bytes>;
     type BodyError = Infallible;
 
     fn into_response(self) -> Response<Self::Body> {
         let t = self.0;
         match t.resp {
-            ResponseType::BadRequest(msg) => {
-                Response::builder()
+            ResponseType::BadRequest(msg) => Response::builder()
+                .status(StatusCode::BAD_REQUEST)
+                .body(Full::from(msg))
+                .unwrap(),
+            ResponseType::IndexPage(_) => match t.render() {
+                Ok(html) => Html(html).into_response(),
+                Err(err) => Response::builder()
                     .status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .body(Full::from(msg))
-                    .unwrap()
-            }
-            ResponseType::IndexPage(_) => {
-                match t.render() {
-                    Ok(html) => Html(html).into_response(),
-                    Err(err) => Response::builder()
-                        .status(StatusCode::INTERNAL_SERVER_ERROR)
-                        .body(Full::from(format!(
-                            "Failed to render template. Error: {}",
-                            err
-                        )))
-                        .unwrap(),
-                }
-            }
+                    .body(Full::from(format!(
+                        "Failed to render template. Error: {}",
+                        err
+                    )))
+                    .unwrap(),
+            },
             ResponseType::DownloadFile(path) => {
                 let guess = mime_guess::from_path(&path);
                 let mime = guess
@@ -188,22 +181,18 @@ impl IntoResponse for HtmlTemplate
                         let mut buffer = Vec::new();
                         f.read_to_end(&mut buffer).unwrap();
                         let mut res = Response::new(Full::from(buffer));
-                        res.headers_mut()
-                            .insert(header::CONTENT_TYPE, mime);
+                        res.headers_mut().insert(header::CONTENT_TYPE, mime);
                         res
                     }
-                    Err(err) => {
-                        Response::builder()
-                            .status(StatusCode::INTERNAL_SERVER_ERROR)
-                            .body(Full::from(format!(
-                                "Failed to open {} . Error: {}",
-                                &path, err
-                            )))
-                            .unwrap()
-                    }
+                    Err(err) => Response::builder()
+                        .status(StatusCode::INTERNAL_SERVER_ERROR)
+                        .body(Full::from(format!(
+                            "Failed to open {} . Error: {}",
+                            &path, err
+                        )))
+                        .unwrap(),
                 }
             }
         }
-
     }
 }
