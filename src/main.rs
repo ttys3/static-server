@@ -45,7 +45,7 @@ async fn favicon() -> impl IntoResponse {
     let pixel_favicon = base64::decode(one_pixel_favicon).unwrap();
     let mut res = Response::new(Full::from(pixel_favicon));
     res.headers_mut()
-        .insert(header::CONTENT_TYPE, "image/png".parse().unwrap());
+        .insert(header::CONTENT_TYPE, HeaderValue::from_static("image/png"));
     res
 }
 
