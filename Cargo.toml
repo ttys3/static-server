@@ -1,0 +1,19 @@
+[package]
+name = "static-server"
+version = "0.1.0"
+edition = "2018"
+publish = false
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+axum = { path = "../axum" }
+tokio = { version = "1.0", features = ["full"] }
+tracing = "0.1"
+tracing-subscriber = "0.2"
+tower-http = { version = "0.1", features = ["fs", "trace"] }
+askama = "0.10"
+hyper = { version = "0.14", features = ["server", "tcp", "http1", "stream"] }
+mime_guess = "2.0.3"
+mime = "0.3.16"
+base64 = "0.13.0"

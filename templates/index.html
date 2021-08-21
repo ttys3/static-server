@@ -1,0 +1,72 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Directory listing for /</title>
+
+    <style>
+        a {
+            text-decoration: none;
+        }
+        a:hover, a:hover .directory, a:hover .file {
+            color: red;
+        }
+
+        .emoji-icon {
+            color: #6ea90c;
+            font-family: 'JetBrainsMono Nerd Font', 'Iosevka Nerd Font';
+        }
+
+        .directory {
+            color:#6ea90c;
+        }
+
+        .file {
+            color: #585a56;
+        }
+    </style>
+</head>
+<body>
+<h1>Directory listing for <span class="directory">/{{ cur_path }}</span></h1>
+<hr>
+
+
+{% match resp %}
+{% when BadRequest with (msg) %}
+bad req {{ msg }}
+{% when IndexPage with (tmpl) %}
+
+<ol>
+
+    {% if cur_path != "" %}
+
+    <li><span class="emoji-icon"> </span> <a href="../">../</a> </li>
+
+    {% endif %}
+
+    {% for file in tmpl.files %}
+
+    {% if file.is_file %}
+    <li><a class="{{file.ext}}" href="/{{file.path}}"><span class="emoji-icon file"> </span> {{file.name}}</a></li>
+
+    {% else %}
+    <li><a href="/{{file.path}}/"><span class="emoji-icon directory"> </span> {{file.name}}/</a></li>
+    {% endif %}
+
+    {% endfor %}
+</ol>
+
+{% when DownloadFile with (filepath) %}
+
+should download file {{ filepath }}, not render this page
+
+{% endmatch %}
+
+<hr>
+</body>
+</html>
+
+
+
+
