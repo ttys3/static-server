@@ -27,12 +27,12 @@ async fn main() {
     tracing_subscriber::fmt::init();
 
     let app = Router::new()
-        .route("/.*", get(greet))
+        .route("/.*", get(serve_files))
         .route("/favicon.ico", get(favicon))
         .layer(TraceLayer::new_for_http());
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
-    tracing::debug!("listening on {}", addr);
+    tracing::info!("listening on http://{}", addr);
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await
@@ -50,7 +50,7 @@ async fn favicon() -> impl IntoResponse {
 }
 
 // extractPath(the_req_path): extractPath<String>
-async fn greet(req: Request<Body>) -> impl IntoResponse {
+async fn serve_files(req: Request<Body>) -> impl IntoResponse {
     let mut files: Vec<FileInfo> = Vec::new();
 
     // build and validate the path
@@ -62,7 +62,7 @@ async fn greet(req: Request<Body>) -> impl IntoResponse {
     full_path.push(".");
     for seg in path.split('/') {
         if seg.starts_with("..") || seg.contains('\\') {
-            return HtmlTemplate(HelloTemplate {
+            return HtmlTemplate(DirListTemplate {
                 resp: BadRequest("invalid path".to_string()),
                 cur_path: path.to_string(),
             });
@@ -101,7 +101,7 @@ async fn greet(req: Request<Body>) -> impl IntoResponse {
                 });
             }
 
-            let template = HelloTemplate {
+            let template = DirListTemplate {
                 // resp: IndexPage(Tmpl{message: "ok".to_string(), is400: false, cur_path: path.to_string(), files }),
                 resp: IndexPage(DirLister { files }),
                 cur_path: path.to_string(),
@@ -111,7 +111,7 @@ async fn greet(req: Request<Body>) -> impl IntoResponse {
         false => {
             // ServeFile::new(cur_path)
             // ServeDir::new
-            return HtmlTemplate(HelloTemplate {
+            return HtmlTemplate(DirListTemplate {
                 resp: DownloadFile(path.to_string()),
                 cur_path: path.to_string(),
             });
@@ -121,7 +121,7 @@ async fn greet(req: Request<Body>) -> impl IntoResponse {
 
 #[derive(Template)]
 #[template(path = "index.html")]
-struct HelloTemplate {
+struct DirListTemplate {
     resp: ResponseType,
     cur_path: String,
 }
@@ -144,7 +144,7 @@ struct FileInfo {
     last_modified: u64,
 }
 
-struct HtmlTemplate(HelloTemplate);
+struct HtmlTemplate(DirListTemplate);
 
 impl IntoResponse for HtmlTemplate {
     type Body = Full<Bytes>;
@@ -159,13 +159,16 @@ impl IntoResponse for HtmlTemplate {
                 .unwrap(),
             ResponseType::IndexPage(_) => match t.render() {
                 Ok(html) => Html(html).into_response(),
-                Err(err) => Response::builder()
-                    .status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .body(Full::from(format!(
-                        "Failed to render template. Error: {}",
-                        err
-                    )))
-                    .unwrap(),
+                Err(err) => {
+                    tracing::error!("template render failed, err={}", err);
+                    Response::builder()
+                        .status(StatusCode::INTERNAL_SERVER_ERROR)
+                        .body(Full::from(format!(
+                            "Failed to render template. Error: {}",
+                            err
+                        )))
+                        .unwrap()
+                }
             },
             ResponseType::DownloadFile(path) => {
                 let guess = mime_guess::from_path(&path);
@@ -184,13 +187,16 @@ impl IntoResponse for HtmlTemplate {
                         res.headers_mut().insert(header::CONTENT_TYPE, mime);
                         res
                     }
-                    Err(err) => Response::builder()
-                        .status(StatusCode::INTERNAL_SERVER_ERROR)
-                        .body(Full::from(format!(
-                            "Failed to open {} . Error: {}",
-                            &path, err
-                        )))
-                        .unwrap(),
+                    Err(err) => {
+                        tracing::error!("open file failed, err={}", err);
+                        Response::builder()
+                            .status(StatusCode::INTERNAL_SERVER_ERROR)
+                            .body(Full::from(format!(
+                                "Failed to open {} . Error: {}",
+                                &path, err
+                            )))
+                            .unwrap()
+                    }
                 }
             }
         }
