@@ -27,7 +27,7 @@ async fn main() {
     tracing_subscriber::fmt::init();
 
     let app = Router::new()
-        .route("/.*", get(serve_files))
+        .nest("/", get(serve_files))
         .route("/favicon.ico", get(favicon))
         .layer(TraceLayer::new_for_http());
 
