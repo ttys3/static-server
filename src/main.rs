@@ -7,23 +7,21 @@ use tower_http::trace::TraceLayer;
 use crate::ResponseType::{BadRequest, IndexPage};
 use askama::Template;
 use axum::body::Body;
-use axum::http::{header, HeaderValue, Request, HeaderMap};
+use axum::http::{header, HeaderValue, Request};
 use axum::{
     body::{Bytes, Full},
     handler::get,
     http::Response,
     response::{Html, IntoResponse},
 };
-use std::fs::File;
-use std::io::{Read, Error};
+
 use std::path::{Path, PathBuf};
 use tower_http::services::ServeDir;
 use tower::util::ServiceExt;
 
 use std::{io};
-use tokio::fs::{self, DirEntry};
+use tokio::fs::{self};
 use std::ffi::OsStr;
-use tower_http::services;
 
 #[tokio::main]
 async fn main() {
@@ -115,7 +113,7 @@ async fn main() {
 }
 
 // io::Result<Vec<DirEntry>>
-async fn visit_dir_one_level(path: &PathBuf) -> io::Result<Vec<FileInfo>> {
+async fn visit_dir_one_level(path: &Path) -> io::Result<Vec<FileInfo>> {
     let mut dir = fs::read_dir(path).await?;
     // let mut files = Vec::new();
     let mut files: Vec<FileInfo> = Vec::new();
