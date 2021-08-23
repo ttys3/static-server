@@ -181,24 +181,24 @@ impl IntoResponse for HtmlTemplate {
 
     fn into_response(self) -> Response<Self::Body> {
         let t = self.0;
-        match t.resp {
-            ResponseType::BadRequest(msg) => Response::builder()
-                .status(StatusCode::BAD_REQUEST)
-                .body(Full::from(msg))
-                .unwrap(),
-            ResponseType::IndexPage(_) => match t.render() {
-                Ok(html) => Html(html).into_response(),
-                Err(err) => {
-                    tracing::error!("template render failed, err={}", err);
-                    Response::builder()
-                        .status(StatusCode::INTERNAL_SERVER_ERROR)
-                        .body(Full::from(format!(
-                            "Failed to render template. Error: {}",
-                            err
-                        )))
-                        .unwrap()
-                }
+        match t.render() {
+            Ok(html) => {
+               let mut resp =  Html(html).into_response();
+               if let ResponseType::BadRequest(_) = t.resp {
+                   *resp.status_mut() = StatusCode::BAD_REQUEST;
+               }
+                resp
             },
+            Err(err) => {
+                tracing::error!("template render failed, err={}", err);
+                Response::builder()
+                    .status(StatusCode::INTERNAL_SERVER_ERROR)
+                    .body(Full::from(format!(
+                        "Failed to render template. Error: {}",
+                        err
+                    )))
+                    .unwrap()
+            }
         }
     }
 }
