@@ -4,7 +4,7 @@ use tower_http::trace::TraceLayer;
 
 // use axum::{extract::Path as extractPath};
 
-use crate::ResponseType::{BadRequest, DownloadFile, IndexPage};
+use crate::ResponseType::{BadRequest, IndexPage};
 use askama::Template;
 use axum::body::Body;
 use axum::http::{header, HeaderValue, Request, HeaderMap};
@@ -37,10 +37,7 @@ async fn main() {
         .nest("/", |req: Request<Body>| async move {
             return match ServeDir::new(".").oneshot(req).await {
                 Ok(res) => {
-                    HtmlTemplate(DirListTemplate {
-                        resp: DownloadFile(res.into_body()),
-                        cur_path: "".to_string()
-                    })
+                    axum::body::box_body(res)
                 },
                 Err(err) => {
                     let path = req.uri().path();
@@ -50,10 +47,11 @@ async fn main() {
                     full_path.push(".");
                     for seg in path.split('/') {
                         if seg.starts_with("..") || seg.contains('\\') {
-                            return HtmlTemplate(DirListTemplate {
+                            let body = HtmlTemplate(DirListTemplate {
                                 resp: BadRequest("invalid path".to_string()),
                                 cur_path: path.to_string(),
-                            });
+                            }).into_response();
+                            return axum::body::box_body(body)
                         }
                         full_path.push(seg);
                     }
@@ -63,26 +61,29 @@ async fn main() {
                     match cur_path.is_dir() {
                         true => {
                             let rs = visit_dir_one_level(&full_path).await;
-                            return match rs {
+                            match rs {
                                 Ok(files) => {
-                                    HtmlTemplate(DirListTemplate {
+                                    let body = HtmlTemplate(DirListTemplate {
                                         resp: IndexPage(DirLister { files: rs.unwrap() }),
                                         cur_path: path.to_string(),
-                                    })
+                                    }).into_response();
+                                    axum::body::box_body(body)
                                 }
                                 Err(e) => {
-                                    HtmlTemplate(DirListTemplate {
+                                    let body = HtmlTemplate(DirListTemplate {
                                         resp: BadRequest(e.to_string()),
                                         cur_path: path.to_string(),
-                                    })
+                                    }).into_response();
+                                    axum::body::box_body(body)
                                 }
                             }
                         },
                         false => {
-                            HtmlTemplate(DirListTemplate {
+                            let body = HtmlTemplate(DirListTemplate {
                                 resp: BadRequest(err.to_string()),
                                 cur_path: path.to_string(),
-                            })
+                            }).into_response();
+                            axum::body::box_body(body)
                         }
                     }
                 },
@@ -144,7 +145,6 @@ struct DirListTemplate {
 enum ResponseType {
     BadRequest(String),
     IndexPage(DirLister),
-    DownloadFile(services::fs::ServeDirResponseBody),
 }
 
 struct DirLister {
@@ -185,12 +185,6 @@ impl IntoResponse for HtmlTemplate {
                         .unwrap()
                 }
             },
-            ResponseType::DownloadFile(respBody) => {
-                let mime = HeaderValue::from_str(mime::APPLICATION_OCTET_STREAM.as_ref()).unwrap();
-                let mut res = Response::new(Full::from(respBody));
-                    res.headers_mut().insert(header::CONTENT_TYPE, mime);
-                    res
-            }
         }
     }
 }
