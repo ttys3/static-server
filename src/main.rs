@@ -33,17 +33,19 @@ async fn main() {
     }
     tracing_subscriber::fmt::init();
 
+    let root_dir = ".".to_string();
+
     let app = Router::new()
         .nest("/", get(|req: Request<Body>| async move {
             let path = req.uri().path().to_string();
-            return match ServeDir::new(".").oneshot(req).await {
+            return match ServeDir::new(&root_dir).oneshot(req).await {
                 Ok(res) => {
                     match res.status() {
                         StatusCode::NOT_FOUND => {
                             let path = path.trim_start_matches('/');
 
                             let mut full_path = PathBuf::new();
-                            full_path.push(".");
+                            full_path.push(&root_dir);
                             for seg in path.split('/') {
                                 if seg.starts_with("..") || seg.contains('\\') {
                                     let body = HtmlTemplate(DirListTemplate {
@@ -127,7 +129,7 @@ async fn visit_dir_one_level(path: &PathBuf) -> io::Result<Vec<FileInfo>> {
                 .to_string(),
             ext: Path::new(child.file_name().to_str().unwrap()).extension()
                 .and_then(OsStr::to_str).unwrap_or_default().to_string(),
-            path: path.to_string_lossy().to_string(),
+            path: child.path().to_string_lossy().to_string(),
             is_file: child.file_type().await?.is_file(),
             last_modified: child.metadata().await?.modified().unwrap().elapsed().unwrap().as_secs(),
         });
