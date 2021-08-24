@@ -101,10 +101,7 @@ async fn main() {
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
     tracing::info!("listening on http://{}", addr);
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
-        .await
-        .unwrap();
+    axum::Server::bind(&addr).serve(app.into_make_service()).await.unwrap();
 }
 
 // io::Result<Vec<DirEntry>>
@@ -124,14 +121,7 @@ async fn visit_dir_one_level(path: &Path) -> io::Result<Vec<FileInfo>> {
                 .to_string(),
             path: child.path().to_string_lossy().to_string(),
             is_file: child.file_type().await?.is_file(),
-            last_modified: child
-                .metadata()
-                .await?
-                .modified()
-                .unwrap()
-                .elapsed()
-                .unwrap()
-                .as_secs(),
+            last_modified: child.metadata().await?.modified().unwrap().elapsed().unwrap().as_secs(),
         });
     }
 
@@ -143,8 +133,7 @@ async fn favicon() -> impl IntoResponse {
     let one_pixel_favicon = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mPk+89QDwADvgGOSHzRgAAAAABJRU5ErkJggg==";
     let pixel_favicon = base64::decode(one_pixel_favicon).unwrap();
     let mut res = Response::new(Full::from(pixel_favicon));
-    res.headers_mut()
-        .insert(header::CONTENT_TYPE, HeaderValue::from_static("image/png"));
+    res.headers_mut().insert(header::CONTENT_TYPE, HeaderValue::from_static("image/png"));
     res
 }
 
@@ -192,10 +181,7 @@ impl IntoResponse for HtmlTemplate {
                 tracing::error!("template render failed, err={}", err);
                 Response::builder()
                     .status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .body(Full::from(format!(
-                        "Failed to render template. Error: {}",
-                        err
-                    )))
+                    .body(Full::from(format!("Failed to render template. Error: {}", err)))
                     .unwrap()
             }
         }

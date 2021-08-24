@@ -1,0 +1,7 @@
+# https://rust-lang.github.io/rustfmt/?version=v1.4.36&search=#max_width
+# Default value: 100
+max_width=160
+
+# https://rust-lang.github.io/rustfmt/?version=v1.4.36&search=#use_small_heuristics
+# Possible values: "Default", "Off", "Max"
+use_small_heuristics="Default"
