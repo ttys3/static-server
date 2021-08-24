@@ -1,10 +1,10 @@
 use axum::{http::StatusCode, Router};
-use std::{convert::Infallible, fs, net::SocketAddr};
+use std::{convert::Infallible, net::SocketAddr};
 use tower_http::trace::TraceLayer;
 
 // use axum::{extract::Path as extractPath};
 
-use crate::ResponseType::{BadRequest, DownloadFile, IndexPage};
+use crate::ResponseType::{BadRequest, IndexPage};
 use askama::Template;
 use axum::body::Body;
 use axum::http::{header, HeaderValue, Request};
@@ -14,9 +14,14 @@ use axum::{
     http::Response,
     response::{Html, IntoResponse},
 };
-use std::fs::File;
-use std::io::Read;
+
 use std::path::{Path, PathBuf};
+use tower_http::services::ServeDir;
+use tower::util::ServiceExt;
+
+use std::{io};
+use tokio::fs::{self};
+use std::ffi::OsStr;
 
 #[tokio::main]
 async fn main() {
@@ -26,8 +31,76 @@ async fn main() {
     }
     tracing_subscriber::fmt::init();
 
+    let root_dir = ".".to_string();
+
     let app = Router::new()
-        .nest("/", get(serve_files))
+        .nest("/", get(|req: Request<Body>| async move {
+            let path = req.uri().path().to_string();
+            return match ServeDir::new(&root_dir).oneshot(req).await {
+                Ok(res) => {
+                    match res.status() {
+                        StatusCode::NOT_FOUND => {
+                            let path = path.trim_start_matches('/');
+
+                            let mut full_path = PathBuf::new();
+                            full_path.push(&root_dir);
+                            for seg in path.split('/') {
+                                if seg.starts_with("..") || seg.contains('\\') {
+                                    let body = HtmlTemplate(DirListTemplate {
+                                        resp: BadRequest("invalid path".to_string()),
+                                        cur_path: path.to_string(),
+                                    }).into_response();
+                                    return axum::body::box_body(body)
+                                }
+                                full_path.push(seg);
+                            }
+
+                            let cur_path = Path::new(&full_path);
+
+                            match cur_path.is_dir() {
+                                true => {
+                                    let rs = visit_dir_one_level(&full_path).await;
+                                    match rs {
+                                        Ok(files) => {
+                                            let body = HtmlTemplate(DirListTemplate {
+                                                resp: IndexPage(DirLister { files }),
+                                                cur_path: path.to_string(),
+                                            }).into_response();
+                                            axum::body::box_body(body)
+                                        }
+                                        Err(e) => {
+                                            let body = HtmlTemplate(DirListTemplate {
+                                                resp: BadRequest(e.to_string()),
+                                                cur_path: path.to_string(),
+                                            }).into_response();
+                                            axum::body::box_body(body)
+                                        }
+                                    }
+                                },
+                                false => {
+                                    let body = HtmlTemplate(DirListTemplate {
+                                        resp: BadRequest("file not found".to_string()),
+                                        cur_path: path.to_string(),
+                                    }).into_response();
+                                    axum::body::box_body(body)
+                                }
+                            }
+                        }
+                        _ => {
+                            axum::body::box_body(res)
+                        }
+                    }
+
+                },
+                Err(err) => {
+                    let body = HtmlTemplate(DirListTemplate {
+                        resp: BadRequest(format!("Unhandled error: {}", err)),
+                        cur_path: path.to_string(),
+                    }).into_response();
+                    axum::body::box_body(body)
+                },
+            };
+        }))
         .route("/favicon.ico", get(favicon))
         .layer(TraceLayer::new_for_http());
 
@@ -39,6 +112,31 @@ async fn main() {
         .unwrap();
 }
 
+// io::Result<Vec<DirEntry>>
+async fn visit_dir_one_level(path: &Path) -> io::Result<Vec<FileInfo>> {
+    let mut dir = fs::read_dir(path).await?;
+    // let mut files = Vec::new();
+    let mut files: Vec<FileInfo> = Vec::new();
+
+    while let Some(child) = dir.next_entry().await? {
+        // files.push(child)
+        files.push(FileInfo {
+            name: child
+                .file_name()
+                .to_string_lossy()
+                .to_string(),
+            ext: Path::new(child.file_name().to_str().unwrap()).extension()
+                .and_then(OsStr::to_str).unwrap_or_default().to_string(),
+            path: child.path().to_string_lossy().to_string(),
+            is_file: child.file_type().await?.is_file(),
+            last_modified: child.metadata().await?.modified().unwrap().elapsed().unwrap().as_secs(),
+        });
+    }
+
+    Ok(files)
+}
+
+
 async fn favicon() -> impl IntoResponse {
     // one pixel favicon generated from https://png-pixel.com/
     let one_pixel_favicon = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mPk+89QDwADvgGOSHzRgAAAAABJRU5ErkJggg==";
@@ -47,76 +145,6 @@ async fn favicon() -> impl IntoResponse {
     res.headers_mut()
         .insert(header::CONTENT_TYPE, HeaderValue::from_static("image/png"));
     res
-}
-
-// extractPath(the_req_path): extractPath<String>
-async fn serve_files(req: Request<Body>) -> impl IntoResponse {
-    let mut files: Vec<FileInfo> = Vec::new();
-
-    // build and validate the path
-    // let path = the_req_path;
-
-    let path = req.uri().path();
-    let path = path.trim_start_matches('/');
-    let mut full_path = PathBuf::new();
-    full_path.push(".");
-    for seg in path.split('/') {
-        if seg.starts_with("..") || seg.contains('\\') {
-            return HtmlTemplate(DirListTemplate {
-                resp: BadRequest("invalid path".to_string()),
-                cur_path: path.to_string(),
-            });
-        }
-        full_path.push(seg);
-    }
-
-    let cur_path = Path::new(&full_path);
-
-    return match cur_path.is_dir() {
-        true => {
-            for entry in fs::read_dir(cur_path).unwrap() {
-                if !entry.is_ok() {
-                    continue;
-                }
-                let path = entry.unwrap().path();
-                let item = Path::new(&path);
-
-                let metadata = fs::metadata(&path).unwrap();
-                let last_modified = metadata.modified().unwrap().elapsed().unwrap().as_secs();
-
-                files.push(FileInfo {
-                    name: item
-                        .file_name()
-                        .unwrap_or_default()
-                        .to_string_lossy()
-                        .to_string(),
-                    ext: item
-                        .extension()
-                        .unwrap_or_default()
-                        .to_string_lossy()
-                        .to_string(),
-                    path: path.to_string_lossy().to_string(),
-                    is_file: metadata.is_file(),
-                    last_modified,
-                });
-            }
-
-            let template = DirListTemplate {
-                // resp: IndexPage(Tmpl{message: "ok".to_string(), is400: false, cur_path: path.to_string(), files }),
-                resp: IndexPage(DirLister { files }),
-                cur_path: path.to_string(),
-            };
-            HtmlTemplate(template)
-        }
-        false => {
-            // ServeFile::new(cur_path)
-            // ServeDir::new
-            return HtmlTemplate(DirListTemplate {
-                resp: DownloadFile(path.to_string()),
-                cur_path: path.to_string(),
-            });
-        }
-    };
 }
 
 #[derive(Template)]
@@ -129,7 +157,6 @@ struct DirListTemplate {
 enum ResponseType {
     BadRequest(String),
     IndexPage(DirLister),
-    DownloadFile(String),
 }
 
 struct DirLister {
@@ -152,52 +179,23 @@ impl IntoResponse for HtmlTemplate {
 
     fn into_response(self) -> Response<Self::Body> {
         let t = self.0;
-        match t.resp {
-            ResponseType::BadRequest(msg) => Response::builder()
-                .status(StatusCode::BAD_REQUEST)
-                .body(Full::from(msg))
-                .unwrap(),
-            ResponseType::IndexPage(_) => match t.render() {
-                Ok(html) => Html(html).into_response(),
-                Err(err) => {
-                    tracing::error!("template render failed, err={}", err);
-                    Response::builder()
-                        .status(StatusCode::INTERNAL_SERVER_ERROR)
-                        .body(Full::from(format!(
-                            "Failed to render template. Error: {}",
-                            err
-                        )))
-                        .unwrap()
-                }
+        match t.render() {
+            Ok(html) => {
+               let mut resp =  Html(html).into_response();
+               if let ResponseType::BadRequest(_) = t.resp {
+                   *resp.status_mut() = StatusCode::BAD_REQUEST;
+               }
+                resp
             },
-            ResponseType::DownloadFile(path) => {
-                let guess = mime_guess::from_path(&path);
-                let mime = guess
-                    .first_raw()
-                    .map(|mime| HeaderValue::from_static(mime))
-                    .unwrap_or_else(|| {
-                        HeaderValue::from_str(mime::APPLICATION_OCTET_STREAM.as_ref()).unwrap()
-                    });
-
-                match File::open(&path) {
-                    Ok(mut f) => {
-                        let mut buffer = Vec::new();
-                        f.read_to_end(&mut buffer).unwrap();
-                        let mut res = Response::new(Full::from(buffer));
-                        res.headers_mut().insert(header::CONTENT_TYPE, mime);
-                        res
-                    }
-                    Err(err) => {
-                        tracing::error!("open file failed, err={}", err);
-                        Response::builder()
-                            .status(StatusCode::INTERNAL_SERVER_ERROR)
-                            .body(Full::from(format!(
-                                "Failed to open {} . Error: {}",
-                                &path, err
-                            )))
-                            .unwrap()
-                    }
-                }
+            Err(err) => {
+                tracing::error!("template render failed, err={}", err);
+                Response::builder()
+                    .status(StatusCode::INTERNAL_SERVER_ERROR)
+                    .body(Full::from(format!(
+                        "Failed to render template. Error: {}",
+                        err
+                    )))
+                    .unwrap()
             }
         }
     }
