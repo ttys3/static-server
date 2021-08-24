@@ -16,12 +16,12 @@ use axum::{
 };
 
 use std::path::{Path, PathBuf};
-use tower_http::services::ServeDir;
 use tower::util::ServiceExt;
+use tower_http::services::ServeDir;
 
-use std::{io};
-use tokio::fs::{self};
 use std::ffi::OsStr;
+use std::io;
+use tokio::fs;
 
 #[tokio::main]
 async fn main() {
@@ -34,11 +34,12 @@ async fn main() {
     let root_dir = ".".to_string();
 
     let app = Router::new()
-        .nest("/", get(|req: Request<Body>| async move {
-            let path = req.uri().path().to_string();
-            return match ServeDir::new(&root_dir).oneshot(req).await {
-                Ok(res) => {
-                    match res.status() {
+        .nest(
+            "/",
+            get(|req: Request<Body>| async move {
+                let path = req.uri().path().to_string();
+                return match ServeDir::new(&root_dir).oneshot(req).await {
+                    Ok(res) => match res.status() {
                         StatusCode::NOT_FOUND => {
                             let path = path.trim_start_matches('/');
 
@@ -46,11 +47,12 @@ async fn main() {
                             full_path.push(&root_dir);
                             for seg in path.split('/') {
                                 if seg.starts_with("..") || seg.contains('\\') {
-                                    let body = HtmlTemplate(DirListTemplate {
+                                    return HtmlTemplate(DirListTemplate {
                                         resp: BadRequest("invalid path".to_string()),
                                         cur_path: path.to_string(),
-                                    }).into_response();
-                                    return axum::body::box_body(body)
+                                    })
+                                    .into_response()
+                                    .map(axum::body::box_body);
                                 }
                                 full_path.push(seg);
                             }
@@ -61,46 +63,39 @@ async fn main() {
                                 true => {
                                     let rs = visit_dir_one_level(&full_path).await;
                                     match rs {
-                                        Ok(files) => {
-                                            let body = HtmlTemplate(DirListTemplate {
-                                                resp: IndexPage(DirLister { files }),
-                                                cur_path: path.to_string(),
-                                            }).into_response();
-                                            axum::body::box_body(body)
-                                        }
-                                        Err(e) => {
-                                            let body = HtmlTemplate(DirListTemplate {
-                                                resp: BadRequest(e.to_string()),
-                                                cur_path: path.to_string(),
-                                            }).into_response();
-                                            axum::body::box_body(body)
-                                        }
+                                        Ok(files) => HtmlTemplate(DirListTemplate {
+                                            resp: IndexPage(DirLister { files }),
+                                            cur_path: path.to_string(),
+                                        })
+                                        .into_response()
+                                        .map(axum::body::box_body),
+                                        Err(e) => HtmlTemplate(DirListTemplate {
+                                            resp: BadRequest(e.to_string()),
+                                            cur_path: path.to_string(),
+                                        })
+                                        .into_response()
+                                        .map(axum::body::box_body),
                                     }
-                                },
-                                false => {
-                                    let body = HtmlTemplate(DirListTemplate {
-                                        resp: BadRequest("file not found".to_string()),
-                                        cur_path: path.to_string(),
-                                    }).into_response();
-                                    axum::body::box_body(body)
                                 }
+                                false => HtmlTemplate(DirListTemplate {
+                                    resp: BadRequest("file not found".to_string()),
+                                    cur_path: path.to_string(),
+                                })
+                                .into_response()
+                                .map(axum::body::box_body),
                             }
                         }
-                        _ => {
-                            axum::body::box_body(res)
-                        }
-                    }
-
-                },
-                Err(err) => {
-                    let body = HtmlTemplate(DirListTemplate {
+                        _ => res.map(axum::body::box_body),
+                    },
+                    Err(err) => HtmlTemplate(DirListTemplate {
                         resp: BadRequest(format!("Unhandled error: {}", err)),
                         cur_path: path.to_string(),
-                    }).into_response();
-                    axum::body::box_body(body)
-                },
-            };
-        }))
+                    })
+                    .into_response()
+                    .map(axum::body::box_body),
+                };
+            }),
+        )
         .route("/favicon.ico", get(favicon))
         .layer(TraceLayer::new_for_http());
 
@@ -121,21 +116,27 @@ async fn visit_dir_one_level(path: &Path) -> io::Result<Vec<FileInfo>> {
     while let Some(child) = dir.next_entry().await? {
         // files.push(child)
         files.push(FileInfo {
-            name: child
-                .file_name()
-                .to_string_lossy()
+            name: child.file_name().to_string_lossy().to_string(),
+            ext: Path::new(child.file_name().to_str().unwrap())
+                .extension()
+                .and_then(OsStr::to_str)
+                .unwrap_or_default()
                 .to_string(),
-            ext: Path::new(child.file_name().to_str().unwrap()).extension()
-                .and_then(OsStr::to_str).unwrap_or_default().to_string(),
             path: child.path().to_string_lossy().to_string(),
             is_file: child.file_type().await?.is_file(),
-            last_modified: child.metadata().await?.modified().unwrap().elapsed().unwrap().as_secs(),
+            last_modified: child
+                .metadata()
+                .await?
+                .modified()
+                .unwrap()
+                .elapsed()
+                .unwrap()
+                .as_secs(),
         });
     }
 
     Ok(files)
 }
-
 
 async fn favicon() -> impl IntoResponse {
     // one pixel favicon generated from https://png-pixel.com/
@@ -181,12 +182,12 @@ impl IntoResponse for HtmlTemplate {
         let t = self.0;
         match t.render() {
             Ok(html) => {
-               let mut resp =  Html(html).into_response();
-               if let ResponseType::BadRequest(_) = t.resp {
-                   *resp.status_mut() = StatusCode::BAD_REQUEST;
-               }
+                let mut resp = Html(html).into_response();
+                if let ResponseType::BadRequest(_) = t.resp {
+                    *resp.status_mut() = StatusCode::BAD_REQUEST;
+                }
                 resp
-            },
+            }
             Err(err) => {
                 tracing::error!("template render failed, err={}", err);
                 Response::builder()
