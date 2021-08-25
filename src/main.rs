@@ -29,7 +29,7 @@ use std::str::FromStr;
 use axum::extract::ConnectInfo;
 
 #[derive(Debug, StructOpt)]
-#[structopt(name = "example", about = "An example of StructOpt usage.")]
+#[structopt(name = "static-server", about = "A simple static file server written in Rust based on axum framework.")]
 struct Opt {
     /// set the log level
     #[structopt(short = "l", long = "log", default_value = "debug")]
