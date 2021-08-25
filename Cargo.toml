@@ -19,3 +19,4 @@ hyper = { version = "0.14", features = ["server", "tcp", "http1", "stream"] }
 mime_guess = "2.0.3"
 mime = "0.3.16"
 base64 = "0.13.0"
+structopt = { version = "0.3", default-features = true }

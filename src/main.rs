@@ -23,15 +23,42 @@ use std::ffi::OsStr;
 use std::io;
 use tokio::fs;
 
+use structopt::StructOpt;
+// for IpAddr::from_str
+use std::str::FromStr;
+
+#[derive(Debug, StructOpt)]
+#[structopt(name = "example", about = "An example of StructOpt usage.")]
+struct Opt {
+    /// set the log level
+    #[structopt(short = "l", long = "log", default_value = "debug")]
+    log_level: String,
+
+    /// set the root directory
+    #[structopt(short = "r", long = "root", default_value = ".")]
+    root_dir: String,
+
+    /// set the listen addr
+    #[structopt(short = "a", long = "addr", default_value = "127.0.0.1")]
+    addr: String,
+
+    /// set the listen port
+    #[structopt(short = "p", long = "port", default_value = "3000")]
+    port: u16,
+}
+
 #[tokio::main]
 async fn main() {
+    let opt = Opt::from_args();
+    tracing::debug!("opt={:?}", opt);
+
     // Set the RUST_LOG, if it hasn't been explicitly defined
     if std::env::var("RUST_LOG").is_err() {
-        std::env::set_var("RUST_LOG", "static_server=debug,tower_http=debug")
+        std::env::set_var("RUST_LOG", format!("static_server={},tower_http={}", opt.log_level, opt.log_level))
     }
     tracing_subscriber::fmt::init();
 
-    let root_dir = ".".to_string();
+    let root_dir = opt.root_dir;
 
     let app = Router::new()
         .nest(
@@ -99,9 +126,17 @@ async fn main() {
         .route("/favicon.ico", get(favicon))
         .layer(TraceLayer::new_for_http());
 
-    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
-    tracing::info!("listening on http://{}", addr);
-    axum::Server::bind(&addr).serve(app.into_make_service()).await.unwrap();
+    let addr = std::net::IpAddr::from_str(opt.addr.as_str()).
+        unwrap_or("127.0.0.1".parse().unwrap());
+
+    let sock_addr = SocketAddr::from((addr, opt.port));
+
+    tracing::info!("listening on http://{}", sock_addr);
+
+    axum::Server::bind(&sock_addr)
+        .serve(app.into_make_service())
+        .await
+        .unwrap();
 }
 
 // io::Result<Vec<DirEntry>>
