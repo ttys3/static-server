@@ -26,6 +26,7 @@ use tokio::fs;
 use structopt::StructOpt;
 // for IpAddr::from_str
 use std::str::FromStr;
+use axum::extract::ConnectInfo;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "example", about = "An example of StructOpt usage.")]
@@ -124,7 +125,18 @@ async fn main() {
             }),
         )
         .route("/favicon.ico", get(favicon))
-        .layer(TraceLayer::new_for_http());
+        // .layer(TraceLayer::new_for_http())
+        .layer(
+            TraceLayer::new_for_http().make_span_with(|request: &Request<Body>| {
+                let ConnectInfo(addr) = request
+                    .extensions()
+                    .get::<ConnectInfo<SocketAddr>>()
+                    .unwrap();
+                let empty_val = &HeaderValue::from_static("");
+                let user_agent = request.headers().get("User-Agent").unwrap_or(empty_val).to_str().unwrap_or("");
+                tracing::debug_span!("http-request", addr = %addr, user_agnet=%user_agent)
+            }),
+        );
 
     let addr = std::net::IpAddr::from_str(opt.addr.as_str()).
         unwrap_or("127.0.0.1".parse().unwrap());
@@ -134,7 +146,7 @@ async fn main() {
     tracing::info!("listening on http://{}", sock_addr);
 
     axum::Server::bind(&sock_addr)
-        .serve(app.into_make_service())
+        .serve(app.into_make_service_with_connect_info::<SocketAddr, _>())
         .await
         .unwrap();
 }
