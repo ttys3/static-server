@@ -134,7 +134,7 @@ async fn main() {
                     .unwrap();
                 let empty_val = &HeaderValue::from_static("");
                 let user_agent = request.headers().get("User-Agent").unwrap_or(empty_val).to_str().unwrap_or("");
-                tracing::debug_span!("client-addr", addr = %addr, user-agent=%user_agent)
+                tracing::debug_span!("client-addr", addr = %addr, user_agent=%user_agent)
             }),
         );
 
