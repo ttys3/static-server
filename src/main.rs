@@ -71,8 +71,7 @@ async fn main() {
                     Ok(res) => match res.status() {
                         StatusCode::NOT_FOUND => {
                             let path = path.trim_start_matches('/');
-                            let path_decoded = percent_decode(path.as_ref()).decode_utf8_lossy().to_string();
-                            let path = path_decoded.as_str();
+                            let path = percent_decode(path.as_ref()).decode_utf8_lossy();
 
                             let mut full_path = PathBuf::new();
                             full_path.push(&root_dir);

@@ -112,7 +112,7 @@ checksum = "cdb031dd78e28731d87d56cc8ffef4a8f36ca26c38fe2de700543e627f8a464a"
 [[package]]
 name = "axum"
 version = "0.2.3"
-source = "git+https://github.com/tokio-rs/axum.git?branch=main#bdc39deef221f01d648bd3dcd247221080560adf"
+source = "git+https://github.com/tokio-rs/axum.git?branch=main#e6ca9e4b048805be209e517dd3690b3dbe262c38"
 dependencies = [
  "async-trait",
  "bitflags",
@@ -935,7 +935,7 @@ dependencies = [
 [[package]]
 name = "tower-http"
 version = "0.1.1"
-source = "git+https://github.com/ttys3/tower-http.git?branch=master#7f8c06da3672cb5e8d4df005b6b0f116ac1e86f0"
+source = "git+https://github.com/ttys3/tower-http.git?branch=master#b51e9ce948f5544c55070ae73c177bfd2e23a3f4"
 dependencies = [
  "bytes",
  "futures-core",
