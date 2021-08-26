@@ -935,7 +935,7 @@ dependencies = [
 [[package]]
 name = "tower-http"
 version = "0.1.1"
-source = "git+https://github.com/ttys3/tower-http.git?branch=master#ed7b2a311f95134186574928303372efff99f09d"
+source = "git+https://github.com/ttys3/tower-http.git?branch=master#7f8c06da3672cb5e8d4df005b6b0f116ac1e86f0"
 dependencies = [
  "bytes",
  "futures-core",
