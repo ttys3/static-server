@@ -89,7 +89,7 @@ async fn main() {
 
                             match cur_path.is_dir() {
                                 true => {
-                                    let rs = visit_dir_one_level(&full_path).await;
+                                    let rs = visit_dir_one_level(&full_path, &root_dir).await;
                                     match rs {
                                         Ok(files) => HtmlTemplate(DirListTemplate {
                                             resp: IndexPage(DirLister { files }),
@@ -152,13 +152,22 @@ async fn main() {
 }
 
 // io::Result<Vec<DirEntry>>
-async fn visit_dir_one_level(path: &Path) -> io::Result<Vec<FileInfo>> {
+async fn visit_dir_one_level(path: &Path, prefix: &str) -> io::Result<Vec<FileInfo>> {
     let mut dir = fs::read_dir(path).await?;
     // let mut files = Vec::new();
     let mut files: Vec<FileInfo> = Vec::new();
 
     while let Some(child) = dir.next_entry().await? {
         // files.push(child)
+
+        let the_path = child.path().to_string_lossy().to_string();
+        let mut the_uri_path = the_path.clone();
+        if !prefix.is_empty() && !the_path.starts_with(prefix) {
+            tracing::error!("visit_dir_one_level skip invalid path={}", the_path);
+            continue;
+        } else {
+            the_uri_path = the_path.strip_prefix(prefix).unwrap().to_string();
+        }
         files.push(FileInfo {
             name: child.file_name().to_string_lossy().to_string(),
             ext: Path::new(child.file_name().to_str().unwrap())
@@ -166,7 +175,8 @@ async fn visit_dir_one_level(path: &Path) -> io::Result<Vec<FileInfo>> {
                 .and_then(OsStr::to_str)
                 .unwrap_or_default()
                 .to_string(),
-            path: child.path().to_string_lossy().to_string(),
+            path: the_path,
+            path_uri: the_uri_path,
             is_file: child.file_type().await?.is_file(),
             last_modified: child.metadata().await?.modified().unwrap().elapsed().unwrap().as_secs(),
         });
@@ -204,6 +214,7 @@ struct FileInfo {
     name: String,
     ext: String,
     path: String,
+    path_uri: String,
     is_file: bool,
     last_modified: u64,
 }
