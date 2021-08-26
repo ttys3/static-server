@@ -48,10 +48,10 @@ bad req {{ msg }}
     {% for file in tmpl.files %}
 
     {% if file.is_file %}
-    <li><a class="{{file.ext}}" href="/{{file.path_uri}}" title="{{ file.last_modified }}"><span class="emoji-icon file"> </span> {{file.name}}</a></li>
+    <li><a class="{{file.ext}}" href="{{file.name}}" title="{{ file.last_modified }}"><span class="emoji-icon file"> </span> {{file.name}}</a></li>
 
     {% else %}
-    <li><a href="/{{file.path_uri}}/" title="{{ file.last_modified }}"><span class="emoji-icon directory"> </span> {{file.name}}/</a></li>
+    <li><a href="{{file.name}}/" title="{{ file.last_modified }}"><span class="emoji-icon directory"> </span> {{file.name}}/</a></li>
     {% endif %}
 
     {% endfor %}
