@@ -33,8 +33,16 @@
 
 
 {% match resp %}
+
+{% when FileNotFound with (msg) %}
+file not found: {{ msg }}
+
 {% when BadRequest with (msg) %}
-bad req {{ msg }}
+bad req: {{ msg }}
+
+{% when InternalError with (msg) %}
+internal server error: {{ msg }}
+
 {% when IndexPage with (tmpl) %}
 
 <ol>
