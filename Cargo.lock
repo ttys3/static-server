@@ -916,7 +916,7 @@ dependencies = [
 [[package]]
 name = "tower-http"
 version = "0.1.1"
-source = "git+https://github.com/ttys3/tower-http.git?branch=readerstream#2aa8c6586ac38971221db876c8993a67c7b6cd33"
+source = "git+https://github.com/ttys3/tower-http.git?branch=servedir-readerstream-perf-improve#39625b0a29914d2189b96616dd6c9e34febdc720"
 dependencies = [
  "bytes",
  "futures-core",
