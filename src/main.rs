@@ -141,7 +141,7 @@ async fn main() {
         );
 
     let addr = std::net::IpAddr::from_str(opt.addr.as_str()).
-        unwrap_or("127.0.0.1".parse().unwrap());
+        unwrap_or_else(|_| "127.0.0.1".parse().unwrap());
 
     let sock_addr = SocketAddr::from((addr, opt.port));
 
@@ -163,7 +163,7 @@ async fn visit_dir_one_level(path: &Path, prefix: &str) -> io::Result<Vec<FileIn
         // files.push(child)
 
         let the_path = child.path().to_string_lossy().to_string();
-        let mut the_uri_path = the_path.clone();
+        let the_uri_path: String;
         if !prefix.is_empty() && !the_path.starts_with(prefix) {
             tracing::error!("visit_dir_one_level skip invalid path={}", the_path);
             continue;
@@ -177,7 +177,7 @@ async fn visit_dir_one_level(path: &Path, prefix: &str) -> io::Result<Vec<FileIn
                 .and_then(OsStr::to_str)
                 .unwrap_or_default()
                 .to_string(),
-            path: the_path,
+            // path: the_path,
             path_uri: the_uri_path,
             is_file: child.file_type().await?.is_file(),
             last_modified: child.metadata().await?.modified().unwrap().elapsed().unwrap().as_secs(),
@@ -217,7 +217,7 @@ struct DirLister {
 struct FileInfo {
     name: String,
     ext: String,
-    path: String,
+    // path: String,
     path_uri: String,
     is_file: bool,
     last_modified: u64,
