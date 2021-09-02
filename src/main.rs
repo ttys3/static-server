@@ -60,7 +60,10 @@ async fn main() {
     }
     tracing_subscriber::fmt::init();
 
-    let root_dir = opt.root_dir;
+    let mut root_dir = opt.root_dir;
+    if root_dir != "/" {
+        root_dir = root_dir.trim_end_matches("/").to_string();
+    }
 
     let app = Router::new()
         .nest(
