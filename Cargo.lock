@@ -112,7 +112,7 @@ checksum = "cdb031dd78e28731d87d56cc8ffef4a8f36ca26c38fe2de700543e627f8a464a"
 [[package]]
 name = "axum"
 version = "0.2.3"
-source = "git+https://github.com/tokio-rs/axum.git?branch=main#39c5cc24fa36bcf228469af2e5404a2385b582d2"
+source = "git+https://github.com/tokio-rs/axum.git?branch=main#835432b5c9a14c0713efddef9e4b25887634f513"
 dependencies = [
  "async-trait",
  "bitflags",
@@ -849,6 +849,7 @@ dependencies = [
 [[package]]
 name = "tokio"
 version = "1.11.0"
+source = "git+https://github.com/tokio-rs/tokio.git?branch=master#d0dd74a0583b3ed7c8c7f68a4279fe9709bbf158"
 dependencies = [
  "autocfg",
  "bytes",
@@ -867,6 +868,7 @@ dependencies = [
 [[package]]
 name = "tokio-macros"
 version = "1.3.0"
+source = "git+https://github.com/tokio-rs/tokio.git?branch=master#d0dd74a0583b3ed7c8c7f68a4279fe9709bbf158"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -876,6 +878,7 @@ dependencies = [
 [[package]]
 name = "tokio-util"
 version = "0.6.7"
+source = "git+https://github.com/tokio-rs/tokio.git?branch=master#d0dd74a0583b3ed7c8c7f68a4279fe9709bbf158"
 dependencies = [
  "bytes",
  "futures-core",
@@ -913,6 +916,7 @@ dependencies = [
 [[package]]
 name = "tower-http"
 version = "0.1.1"
+source = "git+https://github.com/ttys3/tower-http.git?branch=readerstream#2aa8c6586ac38971221db876c8993a67c7b6cd33"
 dependencies = [
  "bytes",
  "futures-core",
