@@ -4,7 +4,7 @@ use tower_http::trace::TraceLayer;
 
 // use axum::{extract::Path as extractPath};
 
-use crate::ResponseType::{BadRequest, IndexPage};
+use crate::ResponseType::{BadRequest, IndexPage, FileNotFound, InternalError};
 use askama::Template;
 use axum::body::Body;
 use axum::http::{header, HeaderValue, Request};
@@ -100,7 +100,7 @@ async fn main() {
                                         .into_response()
                                         .map(axum::body::box_body),
                                         Err(e) => HtmlTemplate(DirListTemplate {
-                                            resp: BadRequest(e.to_string()),
+                                            resp: InternalError(e.to_string()),
                                             cur_path: path.to_string(),
                                         })
                                         .into_response()
@@ -108,7 +108,7 @@ async fn main() {
                                     }
                                 }
                                 false => HtmlTemplate(DirListTemplate {
-                                    resp: BadRequest("file not found".to_string()),
+                                    resp: FileNotFound("file not found".to_string()),
                                     cur_path: path.to_string(),
                                 })
                                 .into_response()
@@ -118,7 +118,7 @@ async fn main() {
                         _ => res.map(axum::body::box_body),
                     },
                     Err(err) => HtmlTemplate(DirListTemplate {
-                        resp: BadRequest(format!("Unhandled error: {}", err)),
+                        resp: InternalError(format!("Unhandled error: {}", err)),
                         cur_path: path.to_string(),
                     })
                     .into_response()
@@ -205,6 +205,8 @@ struct DirListTemplate {
 
 enum ResponseType {
     BadRequest(String),
+    FileNotFound(String),
+    InternalError(String),
     IndexPage(DirLister),
 }
 
@@ -232,8 +234,17 @@ impl IntoResponse for HtmlTemplate {
         match t.render() {
             Ok(html) => {
                 let mut resp = Html(html).into_response();
-                if let ResponseType::BadRequest(_) = t.resp {
-                    *resp.status_mut() = StatusCode::BAD_REQUEST;
+                match t.resp {
+                    ResponseType::FileNotFound(_) => {
+                        *resp.status_mut() = StatusCode::NOT_FOUND;
+                    },
+                    ResponseType::BadRequest(_) => {
+                        *resp.status_mut() = StatusCode::BAD_REQUEST;
+                    },
+                    ResponseType::InternalError(_) => {
+                        *resp.status_mut() = StatusCode::INTERNAL_SERVER_ERROR;
+                    },
+                    _ => {}
                 }
                 resp
             }
