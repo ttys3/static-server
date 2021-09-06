@@ -130,6 +130,7 @@ async fn main() {
             }),
         )
         .route("/favicon.ico", get(favicon))
+        .route("/healthz", get(health_check))
         // .layer(TraceLayer::new_for_http())
         .layer(
             TraceLayer::new_for_http().make_span_with(|request: &Request<Body>| {
@@ -188,6 +189,11 @@ async fn visit_dir_one_level(path: &Path, prefix: &str) -> io::Result<Vec<FileIn
     }
 
     Ok(files)
+}
+
+// see https://kubernetes.io/docs/reference/using-api/health-checks/
+async fn health_check() -> impl IntoResponse {
+    "ok"
 }
 
 async fn favicon() -> impl IntoResponse {
