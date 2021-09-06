@@ -4,7 +4,7 @@ use tower_http::trace::TraceLayer;
 
 // use axum::{extract::Path as extractPath};
 
-use crate::ResponseType::{BadRequest, IndexPage, FileNotFound, InternalError};
+use crate::ResponseType::{BadRequest, FileNotFound, IndexPage, InternalError};
 use askama::Template;
 use axum::body::Body;
 use axum::http::{header, HeaderValue, Request};
@@ -25,9 +25,9 @@ use tokio::fs;
 
 use structopt::StructOpt;
 // for IpAddr::from_str
-use std::str::FromStr;
 use axum::extract::ConnectInfo;
 use percent_encoding::percent_decode;
+use std::str::FromStr;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "static-server", about = "A simple static file server written in Rust based on axum framework.")]
@@ -132,20 +132,14 @@ async fn main() {
         .route("/favicon.ico", get(favicon))
         .route("/healthz", get(health_check))
         // .layer(TraceLayer::new_for_http())
-        .layer(
-            TraceLayer::new_for_http().make_span_with(|request: &Request<Body>| {
-                let ConnectInfo(addr) = request
-                    .extensions()
-                    .get::<ConnectInfo<SocketAddr>>()
-                    .unwrap();
-                let empty_val = &HeaderValue::from_static("");
-                let user_agent = request.headers().get("User-Agent").unwrap_or(empty_val).to_str().unwrap_or("");
-                tracing::debug_span!("client-addr", addr = %addr, user_agent=%user_agent)
-            }),
-        );
+        .layer(TraceLayer::new_for_http().make_span_with(|request: &Request<Body>| {
+            let ConnectInfo(addr) = request.extensions().get::<ConnectInfo<SocketAddr>>().unwrap();
+            let empty_val = &HeaderValue::from_static("");
+            let user_agent = request.headers().get("User-Agent").unwrap_or(empty_val).to_str().unwrap_or("");
+            tracing::debug_span!("client-addr", addr = %addr, user_agent=%user_agent)
+        }));
 
-    let addr = std::net::IpAddr::from_str(opt.addr.as_str()).
-        unwrap_or_else(|_| "127.0.0.1".parse().unwrap());
+    let addr = std::net::IpAddr::from_str(opt.addr.as_str()).unwrap_or_else(|_| "127.0.0.1".parse().unwrap());
 
     let sock_addr = SocketAddr::from((addr, opt.port));
 
@@ -246,13 +240,13 @@ impl IntoResponse for HtmlTemplate {
                 match t.resp {
                     ResponseType::FileNotFound(_) => {
                         *resp.status_mut() = StatusCode::NOT_FOUND;
-                    },
+                    }
                     ResponseType::BadRequest(_) => {
                         *resp.status_mut() = StatusCode::BAD_REQUEST;
-                    },
+                    }
                     ResponseType::InternalError(_) => {
                         *resp.status_mut() = StatusCode::INTERNAL_SERVER_ERROR;
-                    },
+                    }
                     _ => {}
                 }
                 resp
