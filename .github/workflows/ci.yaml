@@ -14,7 +14,30 @@ env:
   RUSTUP_MAX_RETRIES: 10
 
 jobs:
-  rust:
+  check:
+    # Run `cargo check` first to ensure that the pushed code at least compiles.
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust: [ stable, 1.40.0 ]
+    steps:
+      - uses: actions/checkout@master
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          profile: minimal
+      - name: Check
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --all --all-targets --all-features
+      - name: rustfmt
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+
+  test:
     name: Rust
     runs-on: ${{ matrix.os }}
     env:
@@ -64,9 +87,6 @@ jobs:
 
     env:
       targets: "powerpc-unknown-linux-gnu x86_64-unknown-linux-musl"
-      # The rust-analyzer binary is not expected to compile on WASM, but the IDE
-      # crate should
-      targets_ide: "wasm32-unknown-unknown"
 
     steps:
       - name: Checkout repository
@@ -89,7 +109,4 @@ jobs:
         run: |
           for target in ${{ env.targets }}; do
             cargo check --target=$target --all-targets
-          done
-          for target in ${{ env.targets_ide }}; do
-            cargo check -p ide --target=$target --all-targets
           done
