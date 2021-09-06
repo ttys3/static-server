@@ -23,8 +23,9 @@ structopt = { version = "0.3", default-features = true }
 percent-encoding = "2.1.0"
 
 [patch.crates-io]
-tokio = { git = "https://github.com/tokio-rs/tokio.git", branch = "master" }
-tokio-util = { git = "https://github.com/tokio-rs/tokio.git", branch = "master" }
+#tokio = { git = "https://github.com/tokio-rs/tokio.git", branch = "master" }
+#tokio-util = { git = "https://github.com/tokio-rs/tokio.git", branch = "master" }
 tower-http = { git = "https://github.com/ttys3/tower-http.git", branch = "servedir-readerstream-perf-improve" }
+#tower-http = { path = "../tower-http/tower-http" }
 
 
