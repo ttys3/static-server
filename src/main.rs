@@ -62,7 +62,7 @@ async fn main() {
 
     let mut root_dir = opt.root_dir;
     if root_dir != "/" {
-        root_dir = root_dir.trim_end_matches("/").to_string();
+        root_dir = root_dir.trim_end_matches('/').to_string();
     }
 
     let app = Router::new()
