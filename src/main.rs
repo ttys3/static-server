@@ -10,9 +10,9 @@ use axum::body::Body;
 use axum::http::{header, HeaderValue, Request};
 use axum::{
     body::{Bytes, Full},
-    routing::get,
     http::Response,
     response::{Html, IntoResponse},
+    routing::get,
 };
 
 use std::path::{Path, PathBuf};
@@ -66,72 +66,68 @@ async fn main() {
     }
 
     let app = Router::new()
-        .nest(
-            "/",
-            get(|req: Request<Body>| async move {
-                let path = req.uri().path().to_string();
-                return match ServeDir::new(&root_dir).oneshot(req).await {
-                    Ok(res) => match res.status() {
-                        StatusCode::NOT_FOUND => {
-                            let path = path.trim_start_matches('/');
-                            let path = percent_decode(path.as_ref()).decode_utf8_lossy();
+        .route("/favicon.ico", get(favicon))
+        .route("/healthz", get(health_check))
+        .fallback(get(|req: Request<Body>| async move {
+            let path = req.uri().path().to_string();
+            return match ServeDir::new(&root_dir).oneshot(req).await {
+                Ok(res) => match res.status() {
+                    StatusCode::NOT_FOUND => {
+                        let path = path.trim_start_matches('/');
+                        let path = percent_decode(path.as_ref()).decode_utf8_lossy();
 
-                            let mut full_path = PathBuf::new();
-                            full_path.push(&root_dir);
-                            for seg in path.split('/') {
-                                if seg.starts_with("..") || seg.contains('\\') {
-                                    return HtmlTemplate(DirListTemplate {
-                                        resp: BadRequest("invalid path".to_string()),
-                                        cur_path: path.to_string(),
-                                    })
-                                    .into_response()
-                                    .map(axum::body::boxed);
-                                }
-                                full_path.push(seg);
-                            }
-
-                            let cur_path = Path::new(&full_path);
-
-                            match cur_path.is_dir() {
-                                true => {
-                                    let rs = visit_dir_one_level(&full_path, &root_dir).await;
-                                    match rs {
-                                        Ok(files) => HtmlTemplate(DirListTemplate {
-                                            resp: IndexPage(DirLister { files }),
-                                            cur_path: path.to_string(),
-                                        })
-                                        .into_response()
-                                        .map(axum::body::boxed),
-                                        Err(e) => HtmlTemplate(DirListTemplate {
-                                            resp: InternalError(e.to_string()),
-                                            cur_path: path.to_string(),
-                                        })
-                                        .into_response()
-                                        .map(axum::body::boxed),
-                                    }
-                                }
-                                false => HtmlTemplate(DirListTemplate {
-                                    resp: FileNotFound("file not found".to_string()),
+                        let mut full_path = PathBuf::new();
+                        full_path.push(&root_dir);
+                        for seg in path.split('/') {
+                            if seg.starts_with("..") || seg.contains('\\') {
+                                return HtmlTemplate(DirListTemplate {
+                                    resp: BadRequest("invalid path".to_string()),
                                     cur_path: path.to_string(),
                                 })
                                 .into_response()
-                                .map(axum::body::boxed),
+                                .map(axum::body::boxed);
                             }
+                            full_path.push(seg);
                         }
-                        _ => res.map(axum::body::boxed),
-                    },
-                    Err(err) => HtmlTemplate(DirListTemplate {
-                        resp: InternalError(format!("Unhandled error: {}", err)),
-                        cur_path: path.to_string(),
-                    })
-                    .into_response()
-                    .map(axum::body::boxed),
-                };
-            }),
-        )
-        .route("/favicon.ico", get(favicon))
-        .route("/healthz", get(health_check))
-        // .layer(TraceLayer::new_for_http())
+
+                        let cur_path = Path::new(&full_path);
+
+                        match cur_path.is_dir() {
+                            true => {
+                                let rs = visit_dir_one_level(&full_path, &root_dir).await;
+                                match rs {
+                                    Ok(files) => HtmlTemplate(DirListTemplate {
+                                        resp: IndexPage(DirLister { files }),
+                                        cur_path: path.to_string(),
+                                    })
+                                    .into_response()
+                                    .map(axum::body::boxed),
+                                    Err(e) => HtmlTemplate(DirListTemplate {
+                                        resp: InternalError(e.to_string()),
+                                        cur_path: path.to_string(),
+                                    })
+                                    .into_response()
+                                    .map(axum::body::boxed),
+                                }
+                            }
+                            false => HtmlTemplate(DirListTemplate {
+                                resp: FileNotFound("file not found".to_string()),
+                                cur_path: path.to_string(),
+                            })
+                            .into_response()
+                            .map(axum::body::boxed),
+                        }
+                    }
+                    _ => res.map(axum::body::boxed),
+                },
+                Err(err) => HtmlTemplate(DirListTemplate {
+                    resp: InternalError(format!("Unhandled error: {}", err)),
+                    cur_path: path.to_string(),
+                })
+                .into_response()
+                .map(axum::body::boxed),
+            };
+        }))
         .layer(TraceLayer::new_for_http().make_span_with(|request: &Request<Body>| {
             let ConnectInfo(addr) = request.extensions().get::<ConnectInfo<SocketAddr>>().unwrap();
             let empty_val = &HeaderValue::from_static("");
