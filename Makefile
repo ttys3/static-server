@@ -5,6 +5,10 @@ all: check test build
 build:
 	cargo build --release
 
+.PHONY: watch
+watch:
+	cargo watch -x 'run -- -r /tmp'
+
 static:
 	cargo build --release --verbose --target x86_64-unknown-linux-musl
 
