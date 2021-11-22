@@ -25,12 +25,27 @@
         .file {
             color: #585a56;
         }
+
+        #main {
+          width: 60%;
+          max-width: 1600px;
+          margin: 1em auto;
+        }
+
+        footer {
+            display: block;
+            padding: 40px
+            font-size: 12px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
+
+<div id="main">
+
 <h1>Directory listing for <span class="directory">/{{ cur_path }}</span></h1>
 <hr>
-
 
 {% match resp %}
 
@@ -68,6 +83,13 @@ internal server error: {{ msg }}
 {% endmatch %}
 
 <hr>
+
+</div>
+
+<footer>
+		Served with <a rel="noopener noreferrer" href="https://github.com/ttys3/static-server">static-server</a>
+</footer>
+
 </body>
 </html>
 

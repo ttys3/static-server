@@ -86,10 +86,11 @@ async fn main() {
                         full_path.push(&root_dir);
                         for seg in path.split('/') {
                             if seg.starts_with("..") || seg.contains('\\') {
-                                return HtmlTemplate(DirListTemplate {
+                                return ErrorTemplate {
                                     resp: BadRequest("invalid path".to_string()),
                                     cur_path: path.to_string(),
-                                })
+                                    message: "invalid path".to_owned(),
+                                }
                                 .into_response()
                                 .map(axum::body::boxed);
                             }
@@ -102,34 +103,37 @@ async fn main() {
                             true => {
                                 let rs = visit_dir_one_level(&full_path, &root_dir).await;
                                 match rs {
-                                    Ok(files) => HtmlTemplate(DirListTemplate {
+                                    Ok(files) => DirListTemplate {
                                         resp: IndexPage(DirLister { files }),
                                         cur_path: path.to_string(),
-                                    })
+                                    }
                                     .into_response()
                                     .map(axum::body::boxed),
-                                    Err(e) => HtmlTemplate(DirListTemplate {
+                                    Err(e) => ErrorTemplate {
                                         resp: InternalError(e.to_string()),
                                         cur_path: path.to_string(),
-                                    })
+                                        message: e.to_string(),
+                                    }
                                     .into_response()
                                     .map(axum::body::boxed),
                                 }
                             }
-                            false => HtmlTemplate(DirListTemplate {
+                            false => ErrorTemplate {
                                 resp: FileNotFound("file not found".to_string()),
                                 cur_path: path.to_string(),
-                            })
+                                message: "file not found".to_owned(),
+                            }
                             .into_response()
                             .map(axum::body::boxed),
                         }
                     }
                     _ => res.map(axum::body::boxed),
                 },
-                Err(err) => HtmlTemplate(DirListTemplate {
+                Err(err) => ErrorTemplate {
                     resp: InternalError(format!("Unhandled error: {}", err)),
                     cur_path: path.to_string(),
-                })
+                    message: format!("Unhandled error: {}", err),
+                }
                 .into_response()
                 .map(axum::body::boxed),
             };
@@ -210,6 +214,48 @@ struct DirListTemplate {
     cur_path: String,
 }
 
+#[derive(Template)]
+#[template(path = "error.html")]
+struct ErrorTemplate {
+    resp: ResponseType,
+    cur_path: String,
+    message: String,
+}
+
+impl IntoResponse for ErrorTemplate {
+    type Body = Full<Bytes>;
+    type BodyError = Infallible;
+
+    fn into_response(self) -> Response<Self::Body> {
+        let t = self;
+        match t.render() {
+            Ok(html) => {
+                let mut resp = Html(html).into_response();
+                match t.resp {
+                    ResponseType::FileNotFound(_) => {
+                        *resp.status_mut() = StatusCode::NOT_FOUND;
+                    }
+                    ResponseType::BadRequest(_) => {
+                        *resp.status_mut() = StatusCode::BAD_REQUEST;
+                    }
+                    ResponseType::InternalError(_) => {
+                        *resp.status_mut() = StatusCode::INTERNAL_SERVER_ERROR;
+                    }
+                    _ => {}
+                }
+                resp
+            }
+            Err(err) => {
+                tracing::error!("template render failed, err={}", err);
+                Response::builder()
+                    .status(StatusCode::INTERNAL_SERVER_ERROR)
+                    .body(Full::from(format!("Failed to render template. Error: {}", err)))
+                    .unwrap()
+            }
+        }
+    }
+}
+
 enum ResponseType {
     BadRequest(String),
     FileNotFound(String),
@@ -230,14 +276,12 @@ struct FileInfo {
     last_modified: u64,
 }
 
-struct HtmlTemplate(DirListTemplate);
-
-impl IntoResponse for HtmlTemplate {
+impl IntoResponse for DirListTemplate {
     type Body = Full<Bytes>;
     type BodyError = Infallible;
 
     fn into_response(self) -> Response<Self::Body> {
-        let t = self.0;
+        let t = self;
         match t.render() {
             Ok(html) => {
                 let mut resp = Html(html).into_response();
