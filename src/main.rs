@@ -60,6 +60,12 @@ async fn main() {
     }
     tracing_subscriber::fmt::init();
 
+    // strip "/" suffix from roor dir so that we can strip prefix safely (to ensure we get absolute uri path)
+    // root_dir = "/foo/bar/", prefix = "/foo/bar", real path = "/foo/bar/sub1/file1.txt", result uri = "/sub1/file1.txt"
+    // but "/" is still "/", so we need to handle it specially when strip prefix
+    // so "./" -> "."
+    // "/foo/" -> "/foo"
+    // "" or "." equal to current directory
     let mut root_dir = opt.root_dir;
     if root_dir != "/" {
         root_dir = root_dir.trim_end_matches('/').to_string();
@@ -161,8 +167,10 @@ async fn visit_dir_one_level(path: &Path, prefix: &str) -> io::Result<Vec<FileIn
         if !prefix.is_empty() && !the_path.starts_with(prefix) {
             tracing::error!("visit_dir_one_level skip invalid path={}", the_path);
             continue;
-        } else {
+        } else if prefix != "/" {
             the_uri_path = the_path.strip_prefix(prefix).unwrap().to_string();
+        } else {
+            the_uri_path = the_path;
         }
         files.push(FileInfo {
             name: child.file_name().to_string_lossy().to_string(),
