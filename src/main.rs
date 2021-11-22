@@ -4,7 +4,7 @@ use tower_http::trace::TraceLayer;
 
 // use axum::{extract::Path as extractPath};
 
-use crate::ResponseType::{BadRequest, FileNotFound, IndexPage, InternalError};
+use crate::ResponseError::{BadRequest, FileNotFound, InternalError};
 use askama::Template;
 use axum::body::Body;
 use axum::http::{header, HeaderValue, Request};
@@ -87,7 +87,7 @@ async fn main() {
                         for seg in path.split('/') {
                             if seg.starts_with("..") || seg.contains('\\') {
                                 return ErrorTemplate {
-                                    resp: BadRequest("invalid path".to_string()),
+                                    err: BadRequest("invalid path".to_string()),
                                     cur_path: path.to_string(),
                                     message: "invalid path".to_owned(),
                                 }
@@ -104,13 +104,13 @@ async fn main() {
                                 let rs = visit_dir_one_level(&full_path, &root_dir).await;
                                 match rs {
                                     Ok(files) => DirListTemplate {
-                                        resp: IndexPage(DirLister { files }),
+                                        lister: DirLister { files },
                                         cur_path: path.to_string(),
                                     }
                                     .into_response()
                                     .map(axum::body::boxed),
                                     Err(e) => ErrorTemplate {
-                                        resp: InternalError(e.to_string()),
+                                        err: InternalError(e.to_string()),
                                         cur_path: path.to_string(),
                                         message: e.to_string(),
                                     }
@@ -119,7 +119,7 @@ async fn main() {
                                 }
                             }
                             false => ErrorTemplate {
-                                resp: FileNotFound("file not found".to_string()),
+                                err: FileNotFound("file not found".to_string()),
                                 cur_path: path.to_string(),
                                 message: "file not found".to_owned(),
                             }
@@ -130,7 +130,7 @@ async fn main() {
                     _ => res.map(axum::body::boxed),
                 },
                 Err(err) => ErrorTemplate {
-                    resp: InternalError(format!("Unhandled error: {}", err)),
+                    err: InternalError(format!("Unhandled error: {}", err)),
                     cur_path: path.to_string(),
                     message: format!("Unhandled error: {}", err),
                 }
@@ -210,14 +210,14 @@ async fn favicon() -> impl IntoResponse {
 #[derive(Template)]
 #[template(path = "index.html")]
 struct DirListTemplate {
-    resp: ResponseType,
+    lister: DirLister,
     cur_path: String,
 }
 
 #[derive(Template)]
 #[template(path = "error.html")]
 struct ErrorTemplate {
-    resp: ResponseType,
+    err: ResponseError,
     cur_path: String,
     message: String,
 }
@@ -231,17 +231,16 @@ impl IntoResponse for ErrorTemplate {
         match t.render() {
             Ok(html) => {
                 let mut resp = Html(html).into_response();
-                match t.resp {
-                    ResponseType::FileNotFound(_) => {
+                match t.err {
+                    ResponseError::FileNotFound(_) => {
                         *resp.status_mut() = StatusCode::NOT_FOUND;
                     }
-                    ResponseType::BadRequest(_) => {
+                    ResponseError::BadRequest(_) => {
                         *resp.status_mut() = StatusCode::BAD_REQUEST;
                     }
-                    ResponseType::InternalError(_) => {
+                    ResponseError::InternalError(_) => {
                         *resp.status_mut() = StatusCode::INTERNAL_SERVER_ERROR;
                     }
-                    _ => {}
                 }
                 resp
             }
@@ -256,11 +255,10 @@ impl IntoResponse for ErrorTemplate {
     }
 }
 
-enum ResponseType {
+enum ResponseError {
     BadRequest(String),
     FileNotFound(String),
     InternalError(String),
-    IndexPage(DirLister),
 }
 
 struct DirLister {
@@ -283,22 +281,7 @@ impl IntoResponse for DirListTemplate {
     fn into_response(self) -> Response<Self::Body> {
         let t = self;
         match t.render() {
-            Ok(html) => {
-                let mut resp = Html(html).into_response();
-                match t.resp {
-                    ResponseType::FileNotFound(_) => {
-                        *resp.status_mut() = StatusCode::NOT_FOUND;
-                    }
-                    ResponseType::BadRequest(_) => {
-                        *resp.status_mut() = StatusCode::BAD_REQUEST;
-                    }
-                    ResponseType::InternalError(_) => {
-                        *resp.status_mut() = StatusCode::INTERNAL_SERVER_ERROR;
-                    }
-                    _ => {}
-                }
-                resp
-            }
+            Ok(html) => Html(html).into_response(),
             Err(err) => {
                 tracing::error!("template render failed, err={}", err);
                 Response::builder()

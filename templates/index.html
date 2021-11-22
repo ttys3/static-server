@@ -47,19 +47,6 @@
 <h1>Directory listing for <span class="directory">/{{ cur_path }}</span></h1>
 <hr>
 
-{% match resp %}
-
-{% when FileNotFound with (msg) %}
-file not found: {{ msg }}
-
-{% when BadRequest with (msg) %}
-bad req: {{ msg }}
-
-{% when InternalError with (msg) %}
-internal server error: {{ msg }}
-
-{% when IndexPage with (tmpl) %}
-
 <ol>
 
     {% if cur_path != "" %}
@@ -68,7 +55,7 @@ internal server error: {{ msg }}
 
     {% endif %}
 
-    {% for file in tmpl.files %}
+    {% for file in lister.files %}
 
     {% if file.is_file %}
     <li><a class="{{file.ext}}" href="{{file.path_uri | urlencode }}" title="{{ file.last_modified }}"><span class="emoji-icon file"> </span> {{file.name}}</a></li>
@@ -79,8 +66,6 @@ internal server error: {{ msg }}
 
     {% endfor %}
 </ol>
-
-{% endmatch %}
 
 <hr>
 
