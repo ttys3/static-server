@@ -10,7 +10,7 @@ use axum::body::Body;
 use axum::http::{header, HeaderValue, Request};
 use axum::{
     body::{Bytes, Full},
-    handler::get,
+    routing::get,
     http::Response,
     response::{Html, IntoResponse},
 };
@@ -85,7 +85,7 @@ async fn main() {
                                         cur_path: path.to_string(),
                                     })
                                     .into_response()
-                                    .map(axum::body::box_body);
+                                    .map(axum::body::boxed);
                                 }
                                 full_path.push(seg);
                             }
@@ -101,13 +101,13 @@ async fn main() {
                                             cur_path: path.to_string(),
                                         })
                                         .into_response()
-                                        .map(axum::body::box_body),
+                                        .map(axum::body::boxed),
                                         Err(e) => HtmlTemplate(DirListTemplate {
                                             resp: InternalError(e.to_string()),
                                             cur_path: path.to_string(),
                                         })
                                         .into_response()
-                                        .map(axum::body::box_body),
+                                        .map(axum::body::boxed),
                                     }
                                 }
                                 false => HtmlTemplate(DirListTemplate {
@@ -115,17 +115,17 @@ async fn main() {
                                     cur_path: path.to_string(),
                                 })
                                 .into_response()
-                                .map(axum::body::box_body),
+                                .map(axum::body::boxed),
                             }
                         }
-                        _ => res.map(axum::body::box_body),
+                        _ => res.map(axum::body::boxed),
                     },
                     Err(err) => HtmlTemplate(DirListTemplate {
                         resp: InternalError(format!("Unhandled error: {}", err)),
                         cur_path: path.to_string(),
                     })
                     .into_response()
-                    .map(axum::body::box_body),
+                    .map(axum::body::boxed),
                 };
             }),
         )
