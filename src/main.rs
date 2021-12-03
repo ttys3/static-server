@@ -86,13 +86,11 @@ async fn main() {
                         full_path.push(&root_dir);
                         for seg in path.split('/') {
                             if seg.starts_with("..") || seg.contains('\\') {
-                                return ErrorTemplate {
+                                return Err(ErrorTemplate {
                                     err: BadRequest("invalid path".to_string()),
                                     cur_path: path.to_string(),
                                     message: "invalid path".to_owned(),
-                                }
-                                .into_response()
-                                .map(axum::body::boxed);
+                                });
                             }
                             full_path.push(seg);
                         }
@@ -103,39 +101,33 @@ async fn main() {
                             true => {
                                 let rs = visit_dir_one_level(&full_path, &root_dir).await;
                                 match rs {
-                                    Ok(files) => DirListTemplate {
+                                    Ok(files) => Ok(DirListTemplate {
                                         lister: DirLister { files },
                                         cur_path: path.to_string(),
                                     }
                                     .into_response()
-                                    .map(axum::body::boxed),
-                                    Err(e) => ErrorTemplate {
+                                    .map(axum::body::boxed)),
+                                    Err(e) => Err(ErrorTemplate {
                                         err: InternalError(e.to_string()),
                                         cur_path: path.to_string(),
                                         message: e.to_string(),
-                                    }
-                                    .into_response()
-                                    .map(axum::body::boxed),
+                                    }),
                                 }
                             }
-                            false => ErrorTemplate {
+                            false => Err(ErrorTemplate {
                                 err: FileNotFound("file not found".to_string()),
                                 cur_path: path.to_string(),
                                 message: "file not found".to_owned(),
-                            }
-                            .into_response()
-                            .map(axum::body::boxed),
+                            }),
                         }
                     }
-                    _ => res.map(axum::body::boxed),
+                    _ => Ok(res.map(axum::body::boxed)),
                 },
-                Err(err) => ErrorTemplate {
+                Err(err) => Err(ErrorTemplate {
                     err: InternalError(format!("Unhandled error: {}", err)),
                     cur_path: path.to_string(),
                     message: format!("Unhandled error: {}", err),
-                }
-                .into_response()
-                .map(axum::body::boxed),
+                }),
             };
         }))
         .layer(TraceLayer::new_for_http().make_span_with(|request: &Request<Body>| {
