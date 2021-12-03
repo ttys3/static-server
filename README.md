@@ -1,6 +1,8 @@
 # static-server
 simple static file server written in Rust based on [axum](https://github.com/tokio-rs/axum) framework
 
+![screenshot](https://user-images.githubusercontent.com/41882455/144649440-d7e66a57-d6cb-4070-bb60-a0003e3d3d67.png)
+
 I'm learning Rust and axum.
 
 My thought is simple.
