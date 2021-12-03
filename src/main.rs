@@ -105,8 +105,7 @@ async fn main() {
                                         lister: DirLister { files },
                                         cur_path: path.to_string(),
                                     }
-                                    .into_response()
-                                    .map(axum::body::boxed)),
+                                    .into_response()),
                                     Err(e) => Err(ErrorTemplate {
                                         err: InternalError(e.to_string()),
                                         cur_path: path.to_string(),
