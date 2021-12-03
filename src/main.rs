@@ -1,4 +1,3 @@
-use axum::{http::StatusCode, Router};
 use std::net::SocketAddr;
 use tower_http::trace::TraceLayer;
 
@@ -6,13 +5,13 @@ use tower_http::trace::TraceLayer;
 
 use crate::ResponseError::{BadRequest, FileNotFound, InternalError};
 use askama::Template;
-use axum::body::{Body, Full};
-use axum::http::{header, HeaderValue, Request};
+
 use axum::{
-    body::BoxBody,
-    http::Response,
+    body::{Body, BoxBody, Full},
+    http::{header, HeaderValue, Request, Response, StatusCode},
     response::{Html, IntoResponse},
     routing::get,
+    Router,
 };
 
 use std::path::{Path, PathBuf};
