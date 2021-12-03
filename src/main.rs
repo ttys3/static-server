@@ -1,15 +1,15 @@
 use axum::{http::StatusCode, Router};
-use std::{convert::Infallible, net::SocketAddr};
+use std::net::SocketAddr;
 use tower_http::trace::TraceLayer;
 
 // use axum::{extract::Path as extractPath};
 
 use crate::ResponseError::{BadRequest, FileNotFound, InternalError};
 use askama::Template;
-use axum::body::Body;
+use axum::body::{Body, Full};
 use axum::http::{header, HeaderValue, Request};
 use axum::{
-    body::{Bytes, Full},
+    body::BoxBody,
     http::Response,
     response::{Html, IntoResponse},
     routing::get,
@@ -223,10 +223,7 @@ struct ErrorTemplate {
 }
 
 impl IntoResponse for ErrorTemplate {
-    type Body = Full<Bytes>;
-    type BodyError = Infallible;
-
-    fn into_response(self) -> Response<Self::Body> {
+    fn into_response(self) -> Response<BoxBody> {
         let t = self;
         match t.render() {
             Ok(html) => {
@@ -246,10 +243,7 @@ impl IntoResponse for ErrorTemplate {
             }
             Err(err) => {
                 tracing::error!("template render failed, err={}", err);
-                Response::builder()
-                    .status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .body(Full::from(format!("Failed to render template. Error: {}", err)))
-                    .unwrap()
+                (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to render template. Error: {}", err)).into_response()
             }
         }
     }
@@ -275,19 +269,13 @@ struct FileInfo {
 }
 
 impl IntoResponse for DirListTemplate {
-    type Body = Full<Bytes>;
-    type BodyError = Infallible;
-
-    fn into_response(self) -> Response<Self::Body> {
+    fn into_response(self) -> Response<BoxBody> {
         let t = self;
         match t.render() {
             Ok(html) => Html(html).into_response(),
             Err(err) => {
                 tracing::error!("template render failed, err={}", err);
-                Response::builder()
-                    .status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .body(Full::from(format!("Failed to render template. Error: {}", err)))
-                    .unwrap()
+                (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to render template. Error: {}", err)).into_response()
             }
         }
     }
