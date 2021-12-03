@@ -176,7 +176,13 @@ async fn visit_dir_one_level(path: &Path, prefix: &str) -> io::Result<Vec<FileIn
             // path: the_path,
             path_uri: the_uri_path,
             is_file: child.file_type().await?.is_file(),
-            last_modified: child.metadata().await?.modified().unwrap().elapsed().unwrap().as_secs(),
+            last_modified: child
+                .metadata()
+                .await?
+                .modified()?
+                .duration_since(std::time::SystemTime::UNIX_EPOCH)
+                .unwrap()
+                .as_secs() as i64,
         });
     }
 
@@ -195,6 +201,15 @@ async fn favicon() -> impl IntoResponse {
     let mut res = Response::new(Full::from(pixel_favicon));
     res.headers_mut().insert(header::CONTENT_TYPE, HeaderValue::from_static("image/png"));
     res
+}
+
+mod filters {
+    pub fn datetime(ts: &i64) -> ::askama::Result<String> {
+        if let Ok(format) = time::format_description::parse("[year]-[month]-[day] [hour]:[minute]:[second] UTC") {
+            return Ok(time::OffsetDateTime::from_unix_timestamp(*ts).unwrap().format(&format).unwrap());
+        }
+        Err(askama::Error::Fmt(std::fmt::Error))
+    }
 }
 
 #[derive(Template)]
@@ -255,7 +270,7 @@ struct FileInfo {
     // path: String,
     path_uri: String,
     is_file: bool,
-    last_modified: u64,
+    last_modified: i64,
 }
 
 impl IntoResponse for DirListTemplate {
