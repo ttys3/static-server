@@ -2,6 +2,8 @@
 all: check test build
 
 .PHONY: build
+# do not put quotes here for RUSTFLAGS, will cause error
+build: export RUSTFLAGS=-D warnings -W unreachable-pub -W rust-2021-compatibility
 build:
 	cargo build --release
 

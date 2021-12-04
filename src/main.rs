@@ -204,7 +204,7 @@ async fn favicon() -> impl IntoResponse {
 }
 
 mod filters {
-    pub fn datetime(ts: &i64) -> ::askama::Result<String> {
+    pub(crate) fn datetime(ts: &i64) -> ::askama::Result<String> {
         if let Ok(format) = time::format_description::parse("[year]-[month]-[day] [hour]:[minute]:[second] UTC") {
             return Ok(time::OffsetDateTime::from_unix_timestamp(*ts).unwrap().format(&format).unwrap());
         }
