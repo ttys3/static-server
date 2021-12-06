@@ -1,4 +1,4 @@
-use std::net::SocketAddr;
+use std::{net::SocketAddr, sync::Arc};
 use tower_http::trace::TraceLayer;
 
 // use axum::{extract::Path as extractPath};
@@ -8,10 +8,11 @@ use askama::Template;
 
 use axum::{
     body::{Body, BoxBody, Full},
+    extract::Extension,
     http::{header, HeaderValue, Request, Response, StatusCode},
     response::{Html, IntoResponse},
     routing::get,
-    Router,
+    AddExtensionLayer, Router,
 };
 
 use std::path::{Path, PathBuf};
@@ -48,6 +49,10 @@ struct Opt {
     port: u16,
 }
 
+struct StaticServerConfig {
+    pub root_dir: String,
+}
+
 #[tokio::main]
 async fn main() {
     let opt = Opt::from_args();
@@ -73,61 +78,8 @@ async fn main() {
     let app = Router::new()
         .route("/favicon.ico", get(favicon))
         .route("/healthz", get(health_check))
-        .fallback(get(|req: Request<Body>| async move {
-            let path = req.uri().path().to_string();
-            return match ServeDir::new(&root_dir).oneshot(req).await {
-                Ok(res) => match res.status() {
-                    StatusCode::NOT_FOUND => {
-                        let path = path.trim_start_matches('/');
-                        let path = percent_decode(path.as_ref()).decode_utf8_lossy();
-
-                        let mut full_path = PathBuf::new();
-                        full_path.push(&root_dir);
-                        for seg in path.split('/') {
-                            if seg.starts_with("..") || seg.contains('\\') {
-                                return Err(ErrorTemplate {
-                                    err: BadRequest("invalid path".to_string()),
-                                    cur_path: path.to_string(),
-                                    message: "invalid path".to_owned(),
-                                });
-                            }
-                            full_path.push(seg);
-                        }
-
-                        let cur_path = Path::new(&full_path);
-
-                        match cur_path.is_dir() {
-                            true => {
-                                let rs = visit_dir_one_level(&full_path, &root_dir).await;
-                                match rs {
-                                    Ok(files) => Ok(DirListTemplate {
-                                        lister: DirLister { files },
-                                        cur_path: path.to_string(),
-                                    }
-                                    .into_response()),
-                                    Err(e) => Err(ErrorTemplate {
-                                        err: InternalError(e.to_string()),
-                                        cur_path: path.to_string(),
-                                        message: e.to_string(),
-                                    }),
-                                }
-                            }
-                            false => Err(ErrorTemplate {
-                                err: FileNotFound("file not found".to_string()),
-                                cur_path: path.to_string(),
-                                message: "file not found".to_owned(),
-                            }),
-                        }
-                    }
-                    _ => Ok(res.map(axum::body::boxed)),
-                },
-                Err(err) => Err(ErrorTemplate {
-                    err: InternalError(format!("Unhandled error: {}", err)),
-                    cur_path: path.to_string(),
-                    message: format!("Unhandled error: {}", err),
-                }),
-            };
-        }))
+        .fallback(get(index_or_content))
+        .layer(AddExtensionLayer::new(Arc::new(StaticServerConfig { root_dir })))
         .layer(TraceLayer::new_for_http().make_span_with(|request: &Request<Body>| {
             let ConnectInfo(addr) = request.extensions().get::<ConnectInfo<SocketAddr>>().unwrap();
             let empty_val = &HeaderValue::from_static("");
@@ -201,6 +153,65 @@ async fn favicon() -> impl IntoResponse {
     let mut res = Response::new(Full::from(pixel_favicon));
     res.headers_mut().insert(header::CONTENT_TYPE, HeaderValue::from_static("image/png"));
     res
+}
+
+// Request<Body> used an extractors cannot be combined with other unless Request<Body> is the very last extractor.
+// see https://docs.rs/axum/latest/axum/extract/index.html#applying-multiple-extractors
+// see https://github.com/tokio-rs/axum/discussions/583#discussioncomment-1739582
+async fn index_or_content(Extension(cfg): Extension<Arc<StaticServerConfig>>, req: Request<Body>) -> impl IntoResponse {
+    let path = req.uri().path().to_string();
+    return match ServeDir::new(&cfg.root_dir).oneshot(req).await {
+        Ok(res) => match res.status() {
+            StatusCode::NOT_FOUND => {
+                let path = path.trim_start_matches('/');
+                let path = percent_decode(path.as_ref()).decode_utf8_lossy();
+
+                let mut full_path = PathBuf::new();
+                full_path.push(&cfg.root_dir);
+                for seg in path.split('/') {
+                    if seg.starts_with("..") || seg.contains('\\') {
+                        return Err(ErrorTemplate {
+                            err: BadRequest("invalid path".to_string()),
+                            cur_path: path.to_string(),
+                            message: "invalid path".to_owned(),
+                        });
+                    }
+                    full_path.push(seg);
+                }
+
+                let cur_path = Path::new(&full_path);
+
+                match cur_path.is_dir() {
+                    true => {
+                        let rs = visit_dir_one_level(&full_path, &cfg.root_dir).await;
+                        match rs {
+                            Ok(files) => Ok(DirListTemplate {
+                                lister: DirLister { files },
+                                cur_path: path.to_string(),
+                            }
+                            .into_response()),
+                            Err(e) => Err(ErrorTemplate {
+                                err: InternalError(e.to_string()),
+                                cur_path: path.to_string(),
+                                message: e.to_string(),
+                            }),
+                        }
+                    }
+                    false => Err(ErrorTemplate {
+                        err: FileNotFound("file not found".to_string()),
+                        cur_path: path.to_string(),
+                        message: "file not found".to_owned(),
+                    }),
+                }
+            }
+            _ => Ok(res.map(axum::body::boxed)),
+        },
+        Err(err) => Err(ErrorTemplate {
+            err: InternalError(format!("Unhandled error: {}", err)),
+            cur_path: path.to_string(),
+            message: format!("Unhandled error: {}", err),
+        }),
+    };
 }
 
 mod filters {
