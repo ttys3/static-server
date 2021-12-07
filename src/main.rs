@@ -50,7 +50,7 @@ struct Opt {
 }
 
 struct StaticServerConfig {
-    pub root_dir: String,
+    pub(crate) root_dir: String,
 }
 
 #[tokio::main]
