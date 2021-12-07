@@ -23,29 +23,30 @@ use std::ffi::OsStr;
 use std::io;
 use tokio::fs;
 
-use structopt::StructOpt;
+use clap::Parser;
+
 // for IpAddr::from_str
 use axum::extract::ConnectInfo;
 use percent_encoding::percent_decode;
 use std::str::FromStr;
 
-#[derive(Debug, StructOpt)]
-#[structopt(name = "static-server", about = "A simple static file server written in Rust based on axum framework.")]
+#[derive(Parser, Debug)]
+#[clap(name = "static-server", about = "A simple static file server written in Rust based on axum framework.")]
 struct Opt {
     /// set the log level
-    #[structopt(short = "l", long = "log", default_value = "debug")]
+    #[clap(short = 'l', long = "log", default_value = "debug")]
     log_level: String,
 
     /// set the root directory
-    #[structopt(short = "r", long = "root", default_value = ".")]
+    #[clap(short = 'r', long = "root", default_value = ".")]
     root_dir: String,
 
     /// set the listen addr
-    #[structopt(short = "a", long = "addr", default_value = "127.0.0.1")]
+    #[clap(short = 'a', long = "addr", default_value = "127.0.0.1")]
     addr: String,
 
     /// set the listen port
-    #[structopt(short = "p", long = "port", default_value = "3000")]
+    #[clap(short = 'p', long = "port", default_value = "3000")]
     port: u16,
 }
 
@@ -55,8 +56,8 @@ struct StaticServerConfig {
 
 #[tokio::main]
 async fn main() {
-    let opt = Opt::from_args();
-    tracing::debug!("opt={:?}", opt);
+    let opt = Opt::parse();
+    tracing::debug!("opt={:#?}", opt);
 
     // Set the RUST_LOG, if it hasn't been explicitly defined
     if std::env::var("RUST_LOG").is_err() {
