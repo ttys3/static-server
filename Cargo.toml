@@ -31,7 +31,7 @@ mime = "0.3.16"
 base64 = "0.13.0"
 percent-encoding = "2.1.0"
 time = { version = "0.3.5", features = ["formatting"]}
-clap = "3.0.0-rc.7"
+clap = {version = "3.0.0-rc.7", features = ["derive"]}
 
 [patch.crates-io]
 #tokio = { git = "https://github.com/tokio-rs/tokio.git", branch = "master" }
