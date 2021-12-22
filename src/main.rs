@@ -100,48 +100,6 @@ async fn main() {
         .unwrap();
 }
 
-// io::Result<Vec<DirEntry>>
-async fn visit_dir_one_level(path: &Path, prefix: &str) -> io::Result<Vec<FileInfo>> {
-    let mut dir = fs::read_dir(path).await?;
-    // let mut files = Vec::new();
-    let mut files: Vec<FileInfo> = Vec::new();
-
-    while let Some(child) = dir.next_entry().await? {
-        // files.push(child)
-
-        let the_path = child.path().to_string_lossy().to_string();
-        let the_uri_path: String;
-        if !prefix.is_empty() && !the_path.starts_with(prefix) {
-            tracing::error!("visit_dir_one_level skip invalid path={}", the_path);
-            continue;
-        } else if prefix != "/" {
-            the_uri_path = the_path.strip_prefix(prefix).unwrap().to_string();
-        } else {
-            the_uri_path = the_path;
-        }
-        files.push(FileInfo {
-            name: child.file_name().to_string_lossy().to_string(),
-            ext: Path::new(child.file_name().to_str().unwrap())
-                .extension()
-                .and_then(OsStr::to_str)
-                .unwrap_or_default()
-                .to_string(),
-            // path: the_path,
-            path_uri: the_uri_path,
-            is_file: child.file_type().await?.is_file(),
-            last_modified: child
-                .metadata()
-                .await?
-                .modified()?
-                .duration_since(std::time::SystemTime::UNIX_EPOCH)
-                .unwrap()
-                .as_secs() as i64,
-        });
-    }
-
-    Ok(files)
-}
-
 // see https://kubernetes.io/docs/reference/using-api/health-checks/
 async fn health_check() -> impl IntoResponse {
     "ok"
@@ -213,6 +171,48 @@ async fn index_or_content(Extension(cfg): Extension<Arc<StaticServerConfig>>, re
             message: format!("Unhandled error: {}", err),
         }),
     };
+}
+
+// io::Result<Vec<DirEntry>>
+async fn visit_dir_one_level(path: &Path, prefix: &str) -> io::Result<Vec<FileInfo>> {
+    let mut dir = fs::read_dir(path).await?;
+    // let mut files = Vec::new();
+    let mut files: Vec<FileInfo> = Vec::new();
+
+    while let Some(child) = dir.next_entry().await? {
+        // files.push(child)
+
+        let the_path = child.path().to_string_lossy().to_string();
+        let the_uri_path: String;
+        if !prefix.is_empty() && !the_path.starts_with(prefix) {
+            tracing::error!("visit_dir_one_level skip invalid path={}", the_path);
+            continue;
+        } else if prefix != "/" {
+            the_uri_path = the_path.strip_prefix(prefix).unwrap().to_string();
+        } else {
+            the_uri_path = the_path;
+        }
+        files.push(FileInfo {
+            name: child.file_name().to_string_lossy().to_string(),
+            ext: Path::new(child.file_name().to_str().unwrap())
+                .extension()
+                .and_then(OsStr::to_str)
+                .unwrap_or_default()
+                .to_string(),
+            // path: the_path,
+            path_uri: the_uri_path,
+            is_file: child.file_type().await?.is_file(),
+            last_modified: child
+                .metadata()
+                .await?
+                .modified()?
+                .duration_since(std::time::SystemTime::UNIX_EPOCH)
+                .unwrap()
+                .as_secs() as i64,
+        });
+    }
+
+    Ok(files)
 }
 
 mod filters {
