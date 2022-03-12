@@ -12,7 +12,7 @@ use axum::{
     http::{header, HeaderValue, Request, Response, StatusCode},
     response::{Html, IntoResponse},
     routing::get,
-    AddExtensionLayer, Router,
+    Router,
 };
 
 use std::path::{Path, PathBuf};
@@ -80,7 +80,7 @@ async fn main() {
         .route("/favicon.ico", get(favicon))
         .route("/healthz", get(health_check))
         .fallback(get(index_or_content))
-        .layer(AddExtensionLayer::new(Arc::new(StaticServerConfig { root_dir })))
+        .layer(Extension(Arc::new(StaticServerConfig { root_dir })))
         .layer(TraceLayer::new_for_http().make_span_with(|request: &Request<Body>| {
             let ConnectInfo(addr) = request.extensions().get::<ConnectInfo<SocketAddr>>().unwrap();
             let empty_val = &HeaderValue::from_static("");
