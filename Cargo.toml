@@ -18,20 +18,20 @@ debug = 0 # Set this to 1 or 2 to get more useful backtraces in debugger.
 
 [dependencies]
 # axum = { path = "../axum" }
-axum = "0.4.4"
-tokio = { version = "1.16.1", features = ["full"] }
-tracing = "0.1.29"
-tracing-subscriber = "0.3.7"
-tower = "0.4.11"
-tower-http = { version = "0.2.1", features = ["fs", "trace"] }
-askama = "0.11.0"
-hyper = { version = "0.14.16", features = ["server", "tcp", "http1", "stream"] }
-mime_guess = "2.0.3"
+axum = { git = "https://github.com/tokio-rs/axum.git", branch = "main"}
+tokio = { version = "1.17.0", features = ["full"] }
+tracing = "0.1.32"
+tracing-subscriber = "0.3.9"
+tower = "0.4.12"
+tower-http = { version = "0.2.5", features = ["fs", "trace"] }
+askama = "0.11.1"
+hyper = { version = "0.14.18", features = ["server", "tcp", "http1", "stream"] }
+mime_guess = "2.0.4"
 mime = "0.3.16"
 base64 = "0.13.0"
 percent-encoding = "2.1.0"
-time = { version = "0.3.7", features = ["formatting"] }
-clap = { version = "3.0.13", features = ["derive"] }
+time = { version = "0.3.9", features = ["formatting"] }
+clap = { version = "3.1.6", features = ["derive"] }
 
 [patch.crates-io]
 #tokio = { git = "https://github.com/tokio-rs/tokio.git", branch = "master" }
