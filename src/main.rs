@@ -7,7 +7,7 @@ use crate::ResponseError::{BadRequest, FileNotFound, InternalError};
 use askama::Template;
 
 use axum::{
-    body::{Body, BoxBody, Full},
+    body::{Body, BoxBody},
     extract::Extension,
     http::{header, HeaderValue, Request, Response, StatusCode},
     response::{Html, IntoResponse},
@@ -95,7 +95,7 @@ async fn main() {
     tracing::info!("listening on http://{}", sock_addr);
 
     axum::Server::bind(&sock_addr)
-        .serve(app.into_make_service_with_connect_info::<SocketAddr, _>())
+        .serve(app.into_make_service_with_connect_info::<SocketAddr>())
         .await
         .unwrap();
 }
