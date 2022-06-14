@@ -1,5 +1,6 @@
 use std::{net::SocketAddr, sync::Arc};
 use tower_http::trace::TraceLayer;
+use axum_macros::debug_handler;
 
 // use axum::{extract::Path as extractPath};
 
@@ -115,6 +116,7 @@ async fn favicon() -> impl IntoResponse {
 // Request<Body> used an extractors cannot be combined with other unless Request<Body> is the very last extractor.
 // see https://docs.rs/axum/latest/axum/extract/index.html#applying-multiple-extractors
 // see https://github.com/tokio-rs/axum/discussions/583#discussioncomment-1739582
+#[debug_handler]
 async fn index_or_content(Extension(cfg): Extension<Arc<StaticServerConfig>>, req: Request<Body>) -> impl IntoResponse {
     let path = req.uri().path().to_string();
     return match ServeDir::new(&cfg.root_dir).oneshot(req).await {
