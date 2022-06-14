@@ -1,6 +1,6 @@
+use axum_macros::debug_handler;
 use std::{net::SocketAddr, sync::Arc};
 use tower_http::trace::TraceLayer;
-use axum_macros::debug_handler;
 
 // use axum::{extract::Path as extractPath};
 
@@ -120,51 +120,54 @@ async fn favicon() -> impl IntoResponse {
 async fn index_or_content(Extension(cfg): Extension<Arc<StaticServerConfig>>, req: Request<Body>) -> impl IntoResponse {
     let path = req.uri().path().to_string();
     return match ServeDir::new(&cfg.root_dir).oneshot(req).await {
-        Ok(res) => match res.status() {
-            StatusCode::NOT_FOUND => {
-                let path = path.trim_start_matches('/');
-                let path = percent_decode(path.as_ref()).decode_utf8_lossy();
+        Ok(res) => {
+            let status = res.status();
+            match status {
+                StatusCode::NOT_FOUND => {
+                    let path = path.trim_start_matches('/');
+                    let path = percent_decode(path.as_ref()).decode_utf8_lossy();
 
-                let mut full_path = PathBuf::new();
-                full_path.push(&cfg.root_dir);
-                for seg in path.split('/') {
-                    if seg.starts_with("..") || seg.contains('\\') {
-                        return Err(ErrorTemplate {
-                            err: BadRequest("invalid path".to_string()),
-                            cur_path: path.to_string(),
-                            message: "invalid path".to_owned(),
-                        });
-                    }
-                    full_path.push(seg);
-                }
-
-                let cur_path = Path::new(&full_path);
-
-                match cur_path.is_dir() {
-                    true => {
-                        let rs = visit_dir_one_level(&full_path, &cfg.root_dir).await;
-                        match rs {
-                            Ok(files) => Ok(DirListTemplate {
-                                lister: DirLister { files },
+                    let mut full_path = PathBuf::new();
+                    full_path.push(&cfg.root_dir);
+                    for seg in path.split('/') {
+                        if seg.starts_with("..") || seg.contains('\\') {
+                            return Err(ErrorTemplate {
+                                err: BadRequest("invalid path".to_string()),
                                 cur_path: path.to_string(),
-                            }
-                            .into_response()),
-                            Err(e) => Err(ErrorTemplate {
-                                err: InternalError(e.to_string()),
-                                cur_path: path.to_string(),
-                                message: e.to_string(),
-                            }),
+                                message: "invalid path".to_owned(),
+                            });
                         }
+                        full_path.push(seg);
                     }
-                    false => Err(ErrorTemplate {
-                        err: FileNotFound("file not found".to_string()),
-                        cur_path: path.to_string(),
-                        message: "file not found".to_owned(),
-                    }),
+
+                    let cur_path = Path::new(&full_path);
+
+                    match cur_path.is_dir() {
+                        true => {
+                            let rs = visit_dir_one_level(&full_path, &cfg.root_dir).await;
+                            match rs {
+                                Ok(files) => Ok(DirListTemplate {
+                                    lister: DirLister { files },
+                                    cur_path: path.to_string(),
+                                }
+                                .into_response()),
+                                Err(e) => Err(ErrorTemplate {
+                                    err: InternalError(e.to_string()),
+                                    cur_path: path.to_string(),
+                                    message: e.to_string(),
+                                }),
+                            }
+                        }
+                        false => Err(ErrorTemplate {
+                            err: FileNotFound("file not found".to_string()),
+                            cur_path: path.to_string(),
+                            message: "file not found".to_owned(),
+                        }),
+                    }
                 }
+                _ => Ok(res.map(axum::body::boxed)),
             }
-            _ => Ok(res.map(axum::body::boxed)),
-        },
+        }
         Err(err) => Err(ErrorTemplate {
             err: InternalError(format!("Unhandled error: {}", err)),
             cur_path: path.to_string(),
