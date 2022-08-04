@@ -31,7 +31,7 @@ mime = "0.3.16"
 base64 = "0.13.0"
 percent-encoding = "2.1.0"
 time = { version = "0.3.11", features = ["formatting"] }
-clap = { version = "3.2.12", features = ["derive"] }
+clap = { version = "3.2.16", features = ["derive"] }
 axum-macros = "0.2.3"
 
 [patch.crates-io]
