@@ -28,7 +28,6 @@ use clap::Parser;
 use axum::extract::ConnectInfo;
 use percent_encoding::percent_decode;
 use std::str::FromStr;
-use axum::handler::HandlerWithoutStateExt;
 
 #[derive(Parser, Debug)]
 #[clap(name = "static-server", about = "A simple static file server written in Rust based on axum framework.")]
@@ -79,7 +78,7 @@ async fn main() {
     let app = Router::new()
         .route("/favicon.ico", get(favicon))
         .route("/healthz", get(health_check))
-        .fallback_service(index_or_content.into_service())
+        .fallback(index_or_content)
         .layer(Extension(Arc::new(StaticServerConfig { root_dir })))
         .layer(TraceLayer::new_for_http().make_span_with(|request: &Request<Body>| {
             let ConnectInfo(addr) = request.extensions().get::<ConnectInfo<SocketAddr>>().unwrap();
