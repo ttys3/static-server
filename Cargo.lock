@@ -90,7 +90,7 @@ checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 [[package]]
 name = "axum"
 version = "0.5.10"
-source = "git+https://github.com/tokio-rs/axum.git?branch=main#79a0a54bc9f0f585c974b5e6793541baff980662"
+source = "git+https://github.com/tokio-rs/axum.git?branch=main#be624306f44df2b94d861f33e75804b5c217fb29"
 dependencies = [
  "async-trait",
  "axum-core",
@@ -120,7 +120,7 @@ dependencies = [
 [[package]]
 name = "axum-core"
 version = "0.2.6"
-source = "git+https://github.com/tokio-rs/axum.git?branch=main#79a0a54bc9f0f585c974b5e6793541baff980662"
+source = "git+https://github.com/tokio-rs/axum.git?branch=main#be624306f44df2b94d861f33e75804b5c217fb29"
 dependencies = [
  "async-trait",
  "bytes",
@@ -405,9 +405,9 @@ checksum = "a3e378b66a060d48947b590737b30a1be76706c8dd7b8ba0f2fe3989c68a853f"
 
 [[package]]
 name = "matchit"
-version = "0.5.0"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "73cbba799671b762df5a175adf59ce145165747bb891505c43d09aefbbf38beb"
+checksum = "3dfc802da7b1cf80aefffa0c7b2f77247c8b32206cc83c270b61264f5b360a80"
 
 [[package]]
 name = "memchr"
