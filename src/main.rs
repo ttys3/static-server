@@ -1,5 +1,5 @@
 use axum_macros::debug_handler;
-use std::{net::SocketAddr, sync::Arc};
+use std::net::SocketAddr;
 use tower_http::trace::TraceLayer;
 
 use crate::ResponseError::{BadRequest, FileNotFound, InternalError};
@@ -7,7 +7,7 @@ use askama::Template;
 
 use axum::{
     body::{Body, BoxBody},
-    extract::Extension,
+    extract::State,
     http::{header, HeaderValue, Request, Response, StatusCode},
     response::{Html, IntoResponse},
     routing::get,
@@ -49,6 +49,7 @@ struct Opt {
     port: u16,
 }
 
+#[derive(Clone)]
 struct StaticServerConfig {
     pub(crate) root_dir: String,
 }
@@ -75,11 +76,10 @@ async fn main() {
         root_dir = root_dir.trim_end_matches('/').to_string();
     }
 
-    let app = Router::new()
+    let app = Router::with_state(StaticServerConfig { root_dir })
         .route("/favicon.ico", get(favicon))
         .route("/healthz", get(health_check))
         .fallback(index_or_content)
-        .layer(Extension(Arc::new(StaticServerConfig { root_dir })))
         .layer(TraceLayer::new_for_http().make_span_with(|request: &Request<Body>| {
             let ConnectInfo(addr) = request.extensions().get::<ConnectInfo<SocketAddr>>().unwrap();
             let empty_val = &HeaderValue::from_static("");
@@ -115,7 +115,7 @@ async fn favicon() -> impl IntoResponse {
 // see https://docs.rs/axum/latest/axum/extract/index.html#applying-multiple-extractors
 // see https://github.com/tokio-rs/axum/discussions/583#discussioncomment-1739582
 #[debug_handler]
-async fn index_or_content(Extension(cfg): Extension<Arc<StaticServerConfig>>, req: Request<Body>) -> impl IntoResponse {
+async fn index_or_content(State(cfg): State<StaticServerConfig>, req: Request<Body>) -> impl IntoResponse {
     let path = req.uri().path().to_string();
     return match ServeDir::new(&cfg.root_dir).oneshot(req).await {
         Ok(res) => {
