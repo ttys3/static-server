@@ -63,3 +63,7 @@ OPTIONS:
     -p, --port <port>        set the listen port [default: 3000]
     -r, --root <root-dir>    set the root directory [default: .]
 ```
+
+## TODO
+
+use https://github.com/sampotts/plyr for audio,video
