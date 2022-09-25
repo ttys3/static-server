@@ -134,7 +134,7 @@ async fn video_frame_thumbnail(State(cfg): State<StaticServerConfig>, Query(para
     let mut child = Command::new("ffmpeg")
         // Exit after ffmpeg has been running for duration seconds in CPU user time.
         .arg("-timelimit")
-        .arg("6")
+        .arg("24")
         .arg("-loglevel")
         .arg("error")
         // Don't expect any audio in the stream
@@ -168,7 +168,11 @@ async fn video_frame_thumbnail(State(cfg): State<StaticServerConfig>, Query(para
             if out.status.success() {
                 let stdout = out.stdout;
                 tracing::info!("video_frame_thumbnail success file_path={}", &file_path);
-                ([(header::CONTENT_TYPE, HeaderValue::from_static("image/png"))], stdout)
+                if stdout.len() > 0 {
+                    ([(header::CONTENT_TYPE, HeaderValue::from_static("image/png"))], stdout)
+                } else {
+                    ([(header::CONTENT_TYPE, HeaderValue::from_static("image/png"))], default_thumbnail)
+                }
             } else {
                 let stdout = out.stdout;
                 let stderr = out.stderr;
