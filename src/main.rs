@@ -8,7 +8,7 @@ use askama::Template;
 
 use axum::{
     body::{Body, BoxBody},
-    extract::{State},
+    extract::State,
     http::{header, HeaderValue, Request, Response, StatusCode},
     response::{Html, IntoResponse},
     routing::get,
