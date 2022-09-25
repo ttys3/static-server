@@ -24,10 +24,11 @@
     {% if file.is_file %}
     <li class="item">
         <a class="{{file.ext}} {% if file.mime_type == "image" || file.mime_type == "video"%}item-media{% endif %}"
-           href="{{ file.path_uri|urlencode }}"
 
         {# data-src should not be provided when you use html5 videos, ref https://www.lightgalleryjs.com/demos/video-gallery/ #}
+        {# also: video will not play if href exists #}
         {% if file.mime_type != "video" %}
+           href="{{ file.path_uri|urlencode }}"
            data-src="{{ file.path_uri|urlencode }}"
         {% endif %}
 
@@ -37,10 +38,14 @@
 
            {% if file.mime_type == "video" %}
         data-video={{ "'{{\"source\": [{{\"src\":{:?}, \"type\":\"video/mp4\"}}], \"attributes\": {{\"preload\": false, \"playsinline\": true, \"controls\": true}}}}'"|format(file.path_uri|urlencode)|safe }}
+        data-poster="https://www.lightgalleryjs.com/images/demo/vimeo-video-poster.jpg"
+        data-thumbnail-src="https://www.lightgalleryjs.com/images/demo/vimeo-video-poster.jpg"
            {% endif %}
 
            title="{{ file.last_modified|datetime }}">
-            <span class="emoji-icon file"> </span> {{file.name}}
+
+        <span class="emoji-icon file"> </span> {{file.name}}
+
         </a>
     </li>
 
