@@ -42,7 +42,7 @@
         data-thumbnail-src="https://www.lightgalleryjs.com/images/demo/vimeo-video-poster.jpg"
            {% endif %}
 
-           title="{{ file.last_modified|datetime }}">
+           title="{{file.name}} {{ file.last_modified|datetime }}">
 
         <span class="emoji-icon file"> </span> {{file.name}}
 
