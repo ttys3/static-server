@@ -2,6 +2,11 @@
 
 {% block title %}Directory listing for /{{ cur_path }}{% endblock %}
 
+{% block head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@2.6.1/css/lightgallery-bundle.min.css" integrity="sha256-Eg8Gfr1vMiM54szM1+h+M018fqWyvVU/Ml8q48Oub+g=" crossorigin="anonymous">
+{% endblock %}
+
+
 {% block content %}
 <h1>Directory listing for <span class="directory">/{{ cur_path }}</span></h1>
 <hr>
@@ -17,7 +22,17 @@
     {% for file in lister.files %}
 
     {% if file.is_file %}
-    <li><a class="{{file.ext}}" href="{{ file.path_uri|urlencode }}" title="{{ file.last_modified|datetime }}"><span class="emoji-icon file"> </span> {{file.name}}</a></li>
+    <li>
+        <a class="{{file.ext}} {% if file.mime_type == "image" %}item-media{% endif %}"
+           href="{{ file.path_uri|urlencode }}"
+           data-src="{{ file.path_uri|urlencode }}"
+           {% if file.mime_type == "image" %}
+            data-image-src="{{ file.path_uri|urlencode }}"
+           {% endif %}
+           title="{{ file.last_modified|datetime }}">
+            <span class="emoji-icon file"> </span> {{file.name}}
+        </a>
+    </li>
 
     {% else %}
     <li><a href="{{ file.path_uri|urlencode }}/" title="{{ file.last_modified|datetime }}"><span class="emoji-icon directory"> </span> {{file.name}}/</a></li>
@@ -31,4 +46,32 @@
 {% endblock %}
 
 
+{% block foot %}
+<script src="https://cdn.jsdelivr.net/npm/lightgallery@2.6.1/lightgallery.umd.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/lightgallery@2.6.1/plugins/zoom/lg-zoom.min.js" integrity="sha256-BW+CdHpZSdoURyxiqAMWfsvcP4R/xEdV5bM+x/ExnwI=" crossorigin="anonymous"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/lightgallery@2.6.1/plugins/thumbnail/lg-thumbnail.min.js" integrity="sha256-uqfSbDkKJUFg7jrg8JqaFsd9GltLaFPF5Eh952T+4ks=" crossorigin="anonymous"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/lightgallery@2.6.1/plugins/video/lg-video.min.js" integrity="sha256-mPIdMzMuNIW4br39dEPMYdZJbNpOelJhveVyWN+CdVU=" crossorigin="anonymous"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/lightgallery@2.6.1/plugins/rotate/lg-rotate.min.js" integrity="sha256-y8+B8j+NE1bjo0KTUMa5dXNi4jPCeyNlWXc34m+lgD4=" crossorigin="anonymous"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/lightgallery@2.6.1/plugins/fullscreen/lg-fullscreen.min.js" integrity="sha256-/esRH/kG+rhcF+DS65jwYnItViRSDm/Zcge0zO/kuDY=" crossorigin="anonymous"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/lightgallery@2.6.1/plugins/autoplay/lg-autoplay.min.js" integrity="sha256-X8eqXtxzSSu85MpqVVlI0/tdtW3Gwmvk4Kt8vbpQqC0=" crossorigin="anonymous"></script>
+
+<script>
+    lightGallery(document.getElementById('main'), {
+        selector: '.item-media',
+        exThumbImage: 'data-image-src',
+        plugins: [lgZoom, lgVideo, lgThumbnail, lgRotate, lgFullscreen, lgAutoplay],
+        speed: 500,
+        slideShowInterval: 3000,
+        autoplayFirstVideo: false,
+        gotoNextSlideOnVideoEnd: false,
+    });
+
+</script>
+{% endblock %}
 

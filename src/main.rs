@@ -26,6 +26,7 @@ use clap::Parser;
 
 // for IpAddr::from_str
 use axum::extract::ConnectInfo;
+use axum::routing::get_service;
 use percent_encoding::percent_decode;
 use std::str::FromStr;
 
@@ -79,6 +80,7 @@ async fn main() {
     let app = Router::with_state(StaticServerConfig { root_dir })
         .route("/favicon.ico", get(favicon))
         .route("/healthz", get(health_check))
+        .nest("/assets", get_service(ServeDir::new("./templates/assets")).handle_error(handle_error))
         .fallback(index_or_content)
         .layer(TraceLayer::new_for_http().make_span_with(|request: &Request<Body>| {
             let ConnectInfo(addr) = request.extensions().get::<ConnectInfo<SocketAddr>>().unwrap();
@@ -97,6 +99,10 @@ async fn main() {
         .serve(app.into_make_service_with_connect_info::<SocketAddr>())
         .await
         .unwrap();
+}
+
+async fn handle_error(_err: io::Error) -> impl IntoResponse {
+    (StatusCode::INTERNAL_SERVER_ERROR, "Something went wrong...")
 }
 
 // see https://kubernetes.io/docs/reference/using-api/health-checks/
@@ -200,6 +206,7 @@ async fn visit_dir_one_level(path: &Path, prefix: &str) -> io::Result<Vec<FileIn
                 .and_then(OsStr::to_str)
                 .unwrap_or_default()
                 .to_string(),
+            mime_type: mime_guess::from_path(child.path()).first_or_octet_stream().type_().to_string(),
             // path: the_path,
             path_uri: the_uri_path,
             is_file: child.file_type().await?.is_file(),
@@ -280,6 +287,7 @@ struct DirLister {
 struct FileInfo {
     name: String,
     ext: String,
+    mime_type: String,
     // path: String,
     path_uri: String,
     is_file: bool,

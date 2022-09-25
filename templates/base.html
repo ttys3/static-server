@@ -39,6 +39,7 @@
             text-align: center;
         }
     </style>
+    {% block head %}{% endblock %}
 </head>
 <body>
 
@@ -49,6 +50,8 @@
 <footer>
     Served with <a rel="noopener noreferrer" href="https://github.com/ttys3/static-server">static-server</a>
 </footer>
+
+{% block foot %}{% endblock %}
 
 </body>
 </html>
