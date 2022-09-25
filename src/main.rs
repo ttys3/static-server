@@ -8,7 +8,7 @@ use askama::Template;
 
 use axum::{
     body::{Body, BoxBody},
-    extract::{Path as AxumPath, State},
+    extract::{State},
     http::{header, HeaderValue, Request, Response, StatusCode},
     response::{Html, IntoResponse},
     routing::get,
@@ -22,7 +22,7 @@ use tower_http::services::ServeDir;
 use std::ffi::OsStr;
 use std::process::Stdio;
 use tokio::fs;
-use tokio::io::{self, AsyncReadExt};
+use tokio::io;
 
 use clap::Parser;
 
@@ -131,7 +131,7 @@ async fn video_frame_thumbnail(State(cfg): State<StaticServerConfig>, Query(para
 
     // https://www.ffmpeg.org/ffmpeg.html
     // ffmpeg -i ./Big_Buck_Bunny_360_10s_30MB.mp4 -ss 00:00:30.000 -vframes 1 -
-    let mut child = Command::new("ffmpeg")
+    let child = Command::new("ffmpeg")
         // Exit after ffmpeg has been running for duration seconds in CPU user time.
         .arg("-timelimit")
         .arg("24")
@@ -169,7 +169,7 @@ async fn video_frame_thumbnail(State(cfg): State<StaticServerConfig>, Query(para
             if out.status.success() {
                 let stdout = out.stdout;
                 tracing::info!("video_frame_thumbnail success file_path={}", &file_path);
-                if stdout.len() > 0 {
+                if !stdout.is_empty() {
                     ([(header::CONTENT_TYPE, HeaderValue::from_static("image/png"))], stdout)
                 } else {
                     ([(header::CONTENT_TYPE, HeaderValue::from_static("image/png"))], default_thumbnail)
