@@ -1,50 +1,8 @@
+{% extends "base.html" %}
 
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
-<head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Directory listing for /</title>
+{% block title %}Directory listing for /{{ cur_path }}{% endblock %}
 
-    <style>
-        a {
-            text-decoration: none;
-            color: #4c7883;
-        }
-        a:hover, a:hover .directory, a:hover .file {
-            color: #ef482c;
-        }
-
-        .emoji-icon {
-            color: #6ea90c;
-            font-family: 'JetBrainsMono Nerd Font', 'Iosevka Nerd Font';
-        }
-
-        .directory {
-            color:#6ea90c;
-        }
-
-        .file {
-            color: #585a56;
-        }
-
-        #main {
-          width: 60%;
-          max-width: 1600px;
-          margin: 1em auto;
-        }
-
-        footer {
-            display: block;
-            padding: 40px;
-            font-size: 12px;
-            text-align: center;
-        }
-    </style>
-</head>
-<body>
-
-<div id="main">
-
+{% block content %}
 <h1>Directory listing for <span class="directory">/{{ cur_path }}</span></h1>
 <hr>
 
@@ -70,15 +28,7 @@
 
 <hr>
 
-</div>
-
-<footer>
-		Served with <a rel="noopener noreferrer" href="https://github.com/ttys3/static-server">static-server</a>
-</footer>
-
-</body>
-</html>
-
+{% endblock %}
 
 
 
