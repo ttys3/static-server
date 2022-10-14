@@ -695,7 +695,7 @@ dependencies = [
 
 [[package]]
 name = "static-server"
-version = "0.5.0"
+version = "0.5.2"
 dependencies = [
  "askama",
  "axum",
