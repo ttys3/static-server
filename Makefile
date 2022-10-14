@@ -12,7 +12,7 @@ watch:
 	cargo watch -x 'run -- -r /tmp'
 
 static:
-	cargo build --release --verbose --target x86_64-unknown-linux-musl
+	cargo build --release --target x86_64-unknown-linux-musl
 
 .PHONY: build/debug
 build/debug:
