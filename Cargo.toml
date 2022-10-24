@@ -30,7 +30,7 @@ mime_guess = "2.0.4"
 mime = "0.3.16"
 base64 = "0.13.0"
 percent-encoding = "2.2.0"
-time = { version = "0.3.15", features = ["formatting"] }
+time = { version = "0.3.16", features = ["formatting"] }
 clap = { version = "4.0.15", features = ["derive"] }
 axum-macros = { git = "https://github.com/tokio-rs/axum.git", branch = "main"}
 
