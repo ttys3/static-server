@@ -86,10 +86,7 @@ async fn main() {
         root_dir = root_dir.trim_end_matches('/').to_string();
     }
 
-    let app = Router::with_state(StaticServerConfig {
-        root_dir,
-        thumbnail: opt.thumbnail,
-    })
+    let app = Router::new()
     .route("/favicon.ico", get(favicon))
     .route("/healthz", get(health_check))
     .route("/frame", get(video_frame_thumbnail))
@@ -98,7 +95,11 @@ async fn main() {
     .layer(TraceLayer::new_for_http().make_span_with(|request: &Request<Body>| {
         let ConnectInfo(addr) = request.extensions().get::<ConnectInfo<SocketAddr>>().unwrap();
         tracing::debug_span!("req", addr = %addr, path=%request.uri().path(), query=%request.uri().query().map(|q| format!("?{}", q)).unwrap_or_default())
-    }));
+    }))
+        .with_state(StaticServerConfig {
+        root_dir,
+        thumbnail: opt.thumbnail,
+    });
 
     let addr = std::net::IpAddr::from_str(opt.addr.as_str()).unwrap_or_else(|_| "127.0.0.1".parse().unwrap());
 
