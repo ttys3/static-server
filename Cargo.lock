@@ -69,8 +69,8 @@ checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 
 [[package]]
 name = "axum"
-version = "0.6.0-rc.5"
-source = "git+https://github.com/tokio-rs/axum.git?branch=main#0b26411f39fcb58b7ef062c81e52d70a5e6c7b55"
+version = "0.6.1"
+source = "git+https://github.com/tokio-rs/axum.git?branch=main#7e13d696395a4cf61bd1bb4fcf453630a564656b"
 dependencies = [
  "async-trait",
  "axum-core",
@@ -101,8 +101,8 @@ dependencies = [
 
 [[package]]
 name = "axum-core"
-version = "0.3.0-rc.3"
-source = "git+https://github.com/tokio-rs/axum.git?branch=main#0b26411f39fcb58b7ef062c81e52d70a5e6c7b55"
+version = "0.3.0"
+source = "git+https://github.com/tokio-rs/axum.git?branch=main#7e13d696395a4cf61bd1bb4fcf453630a564656b"
 dependencies = [
  "async-trait",
  "bytes",
@@ -117,8 +117,8 @@ dependencies = [
 
 [[package]]
 name = "axum-macros"
-version = "0.3.0-rc.3"
-source = "git+https://github.com/tokio-rs/axum.git?branch=main#0b26411f39fcb58b7ef062c81e52d70a5e6c7b55"
+version = "0.3.0"
+source = "git+https://github.com/tokio-rs/axum.git?branch=main#7e13d696395a4cf61bd1bb4fcf453630a564656b"
 dependencies = [
  "heck",
  "proc-macro2",
@@ -428,9 +428,9 @@ dependencies = [
 
 [[package]]
 name = "matchit"
-version = "0.6.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3dfc802da7b1cf80aefffa0c7b2f77247c8b32206cc83c270b61264f5b360a80"
+checksum = "b87248edafb776e59e6ee64a79086f65890d3510f2c656c000bf2a7e8a0aea40"
 
 [[package]]
 name = "memchr"
