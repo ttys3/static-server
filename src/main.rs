@@ -87,19 +87,19 @@ async fn main() {
     }
 
     let app = Router::new()
-    .route("/favicon.ico", get(favicon))
-    .route("/healthz", get(health_check))
-    .route("/frame", get(video_frame_thumbnail))
-    .nest_service("/assets", get_service(ServeDir::new("./templates/assets")).handle_error(handle_error))
-    .fallback(index_or_content)
-    .layer(TraceLayer::new_for_http().make_span_with(|request: &Request<Body>| {
-        let ConnectInfo(addr) = request.extensions().get::<ConnectInfo<SocketAddr>>().unwrap();
-        tracing::debug_span!("req", addr = %addr, path=%request.uri().path(), query=%request.uri().query().map(|q| format!("?{}", q)).unwrap_or_default())
-    }))
+        .route("/favicon.ico", get(favicon))
+        .route("/healthz", get(health_check))
+        .route("/frame", get(video_frame_thumbnail))
+        .nest_service("/assets", get_service(ServeDir::new("./templates/assets")).handle_error(handle_error))
+        .fallback(index_or_content)
+        .layer(TraceLayer::new_for_http().make_span_with(|request: &Request<Body>| {
+            let ConnectInfo(addr) = request.extensions().get::<ConnectInfo<SocketAddr>>().unwrap();
+            tracing::debug_span!("req", addr = %addr, path=%request.uri().path(), query=%request.uri().query().map(|q| format!("?{}", q)).unwrap_or_default())
+        }))
         .with_state(StaticServerConfig {
-        root_dir,
-        thumbnail: opt.thumbnail,
-    });
+            root_dir,
+            thumbnail: opt.thumbnail,
+        });
 
     let addr = std::net::IpAddr::from_str(opt.addr.as_str()).unwrap_or_else(|_| "127.0.0.1".parse().unwrap());
 
