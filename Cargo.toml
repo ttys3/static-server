@@ -28,7 +28,7 @@ askama = "0.11.1"
 hyper = { version = "0.14.23", features = ["server", "tcp", "http1", "stream"] }
 mime_guess = "2.0.4"
 mime = "0.3.16"
-base64 = "0.13.1"
+base64 = "0.20.0"
 percent-encoding = "2.2.0"
 time = { version = "0.3.17", features = ["formatting"] }
 clap = { version = "4.0.29", features = ["derive"] }
