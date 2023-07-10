@@ -31,7 +31,7 @@ mime = "0.3.17"
 base64 = "0.21.2"
 percent-encoding = "2.3.0"
 time = { version = "0.3.22", features = ["formatting"] }
-clap = { version = "4.3.3", features = ["derive"] }
+clap = { version = "4.3.11", features = ["derive"] }
 axum-macros = { git = "https://github.com/tokio-rs/axum.git", branch = "main"}
 
 [patch.crates-io]
