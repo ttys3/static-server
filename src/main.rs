@@ -7,7 +7,7 @@ use crate::ResponseError::{BadRequest, FileNotFound, InternalError};
 use askama::Template;
 
 use axum::{
-    body::{Body, BoxBody},
+    body::{Body},
     extract::State,
     http::{header, HeaderValue, Request, Response, StatusCode},
     response::{Html, IntoResponse},
@@ -108,8 +108,9 @@ async fn main() {
 
     tracing::info!("listening on http://{}", sock_addr);
 
-    axum::Server::bind(&sock_addr)
-        .serve(app.into_make_service_with_connect_info::<SocketAddr>())
+    let listener = tokio::net::TcpListener::bind(sock_addr).await.unwrap();
+
+    axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
         .await
         .unwrap();
 }
@@ -256,7 +257,7 @@ async fn index_or_content(State(cfg): State<StaticServerConfig>, req: Request<Bo
                         }),
                     }
                 }
-                _ => Ok(res.map(axum::body::boxed)),
+                _ => Ok(res.map(axum::body::Body::new)),
             }
         }
         Err(err) => Err(ErrorTemplate {
@@ -335,7 +336,7 @@ struct ErrorTemplate {
 }
 
 impl IntoResponse for ErrorTemplate {
-    fn into_response(self) -> Response<BoxBody> {
+    fn into_response(self) -> Response<Body> {
         let t = self;
         match t.render() {
             Ok(html) => {
@@ -382,7 +383,7 @@ struct FileInfo {
 }
 
 impl IntoResponse for DirListTemplate {
-    fn into_response(self) -> Response<BoxBody> {
+    fn into_response(self) -> Response<Body> {
         let t = self;
         match t.render() {
             Ok(html) => Html(html).into_response(),

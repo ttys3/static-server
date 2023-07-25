@@ -19,19 +19,19 @@ debug = 0 # Set this to 1 or 2 to get more useful backtraces in debugger.
 [dependencies]
 # axum = { path = "../axum" }
 axum = { git = "https://github.com/tokio-rs/axum.git", branch = "main"}
-tokio = { version = "1.28.2", features = ["full"] }
+tokio = { version = "1.29.1", features = ["full"] }
 tracing = "0.1.37"
 tracing-subscriber = "0.3.17"
 tower = "0.4.13"
-tower-http = { version = "0.4.0", features = ["fs", "trace"] }
+tower-http = { version = "0.4.3", features = ["fs", "trace"] }
 askama = "0.12.0"
-hyper = { version = "0.14.26", features = ["server", "tcp", "http1", "stream"] }
+hyper = { version = "0.14.27", features = ["server", "tcp", "http1", "stream"] }
 mime_guess = "2.0.4"
 mime = "0.3.17"
 base64 = "0.21.2"
 percent-encoding = "2.3.0"
-time = { version = "0.3.22", features = ["formatting"] }
-clap = { version = "4.3.3", features = ["derive"] }
+time = { version = "0.3.23", features = ["formatting"] }
+clap = { version = "4.3.19", features = ["derive"] }
 axum-macros = { git = "https://github.com/tokio-rs/axum.git", branch = "main"}
 
 [patch.crates-io]
