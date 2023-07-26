@@ -7,7 +7,7 @@ use crate::ResponseError::{BadRequest, FileNotFound, InternalError};
 use askama::Template;
 
 use axum::{
-    body::{Body},
+    body::Body,
     extract::State,
     http::{header, HeaderValue, Request, Response, StatusCode},
     response::{Html, IntoResponse},
@@ -110,9 +110,7 @@ async fn main() {
 
     let listener = tokio::net::TcpListener::bind(sock_addr).await.unwrap();
 
-    axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
-        .await
-        .unwrap();
+    axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>()).await.unwrap();
 }
 
 // see https://kubernetes.io/docs/reference/using-api/health-checks/
