@@ -129,7 +129,7 @@ checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 [[package]]
 name = "axum"
 version = "0.6.16"
-source = "git+https://github.com/tokio-rs/axum.git?branch=main#20862d42f50ed6982907c50d4da41313ad7938bd"
+source = "git+https://github.com/tokio-rs/axum.git?branch=main#15781fe22b7b100075bf2be176976598a1402ed1"
 dependencies = [
  "async-trait",
  "axum-core",
@@ -161,7 +161,7 @@ dependencies = [
 [[package]]
 name = "axum-core"
 version = "0.3.4"
-source = "git+https://github.com/tokio-rs/axum.git?branch=main#20862d42f50ed6982907c50d4da41313ad7938bd"
+source = "git+https://github.com/tokio-rs/axum.git?branch=main#15781fe22b7b100075bf2be176976598a1402ed1"
 dependencies = [
  "async-trait",
  "bytes",
@@ -180,7 +180,7 @@ dependencies = [
 [[package]]
 name = "axum-macros"
 version = "0.3.7"
-source = "git+https://github.com/tokio-rs/axum.git?branch=main#20862d42f50ed6982907c50d4da41313ad7938bd"
+source = "git+https://github.com/tokio-rs/axum.git?branch=main#15781fe22b7b100075bf2be176976598a1402ed1"
 dependencies = [
  "heck",
  "proc-macro2",
@@ -368,9 +368,9 @@ dependencies = [
 
 [[package]]
 name = "gimli"
-version = "0.28.0"
+version = "0.28.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6fb8d784f27acf97159b40fc4db5ecd8aa23b9ad5ef69cdd136d3bc80665f0c0"
+checksum = "4271d37baee1b8c7e4b708028c57d816cf9d2434acb33a549475f78c181f6253"
 
 [[package]]
 name = "h2"
@@ -393,9 +393,9 @@ dependencies = [
 
 [[package]]
 name = "hashbrown"
-version = "0.14.2"
+version = "0.14.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f93e7192158dbcda357bdec5fb5788eebf8bbac027f3f33e719d29135ae84156"
+checksum = "290f1a1d9242c78d09ce40a5e87e7554ee637af1351968159f4952f028f75604"
 
 [[package]]
 name = "heck"
@@ -742,9 +742,9 @@ checksum = "439ee305def115ba05938db6eb1644ff94165c5ab5e9420d1c1bcedbba909391"
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.69"
+version = "1.0.70"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "134c189feb4956b20f6f547d2cf727d4c0fe06722b20a0eec87ed445a97f92da"
+checksum = "39278fbbf5fb4f646ce651690877f89d1c5811a3d4acb27700c1cb3cdb78fd3b"
 dependencies = [
  "unicode-ident",
 ]
