@@ -31,7 +31,7 @@ mime_guess = "2.0.4"
 mime = "0.3.17"
 base64 = "0.21.5"
 percent-encoding = "2.3.1"
-time = { version = "0.3.30", features = ["formatting"] }
+time = { version = "0.3.31", features = ["formatting"] }
 clap = { version = "4.4.11", features = ["derive"] }
 
 [patch.crates-io]
