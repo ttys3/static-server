@@ -128,8 +128,8 @@ checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 
 [[package]]
 name = "axum"
-version = "0.7.2"
-source = "git+https://github.com/tokio-rs/axum.git?branch=main#fd3bfe4448826efd49eff3d5ffa65deb653034ef"
+version = "0.7.3"
+source = "git+https://github.com/tokio-rs/axum.git?branch=main#71eedc6d6cd5fc706ae8d0bcabb49b74e46050f8"
 dependencies = [
  "async-trait",
  "axum-core",
@@ -156,12 +156,13 @@ dependencies = [
  "tower",
  "tower-layer",
  "tower-service",
+ "tracing",
 ]
 
 [[package]]
 name = "axum-core"
-version = "0.4.1"
-source = "git+https://github.com/tokio-rs/axum.git?branch=main#fd3bfe4448826efd49eff3d5ffa65deb653034ef"
+version = "0.4.2"
+source = "git+https://github.com/tokio-rs/axum.git?branch=main#71eedc6d6cd5fc706ae8d0bcabb49b74e46050f8"
 dependencies = [
  "async-trait",
  "bytes",
@@ -175,12 +176,13 @@ dependencies = [
  "sync_wrapper",
  "tower-layer",
  "tower-service",
+ "tracing",
 ]
 
 [[package]]
 name = "axum-macros"
 version = "0.4.0"
-source = "git+https://github.com/tokio-rs/axum.git?branch=main#fd3bfe4448826efd49eff3d5ffa65deb653034ef"
+source = "git+https://github.com/tokio-rs/axum.git?branch=main#71eedc6d6cd5fc706ae8d0bcabb49b74e46050f8"
 dependencies = [
  "heck",
  "proc-macro2",
@@ -491,9 +493,9 @@ dependencies = [
 
 [[package]]
 name = "hyper-util"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9ca339002caeb0d159cc6e023dff48e199f081e42fa039895c7c6f38b37f2e9d"
+checksum = "bdea9aac0dbe5a9240d68cfd9501e2db94222c6dc06843e06640b9e07f0fdc67"
 dependencies = [
  "bytes",
  "futures-channel",
@@ -504,8 +506,6 @@ dependencies = [
  "pin-project-lite",
  "socket2",
  "tokio",
- "tower",
- "tower-service",
  "tracing",
 ]
 
