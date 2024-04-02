@@ -110,7 +110,10 @@ async fn main() {
 
     let listener = tokio::net::TcpListener::bind(sock_addr).await.unwrap();
 
-    axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>()).await.unwrap();
+    axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
+    .tcp_nodelay(true)
+    .await
+    .unwrap();
 }
 
 // see https://kubernetes.io/docs/reference/using-api/health-checks/
