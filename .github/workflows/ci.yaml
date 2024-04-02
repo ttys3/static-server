@@ -6,6 +6,7 @@ on:
       - main
 
 env:
+  CARGO_TERM_COLOR: always
   CARGO_INCREMENTAL: 0
   CARGO_NET_RETRY: 10
   CI: 1
@@ -22,10 +23,11 @@ jobs:
         rust: [ stable ]
     steps:
       - uses: actions/checkout@master
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@beta
         with:
           toolchain: ${{ matrix.rust }}
-          profile: minimal
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
       - name: Check
         uses: actions-rs/cargo@v1
         with:
