@@ -336,6 +336,8 @@ struct ErrorTemplate {
     message: String,
 }
 
+const FAIL_REASON_HEADER_NAME: &str = "static-server-fail-reason";
+
 impl IntoResponse for ErrorTemplate {
     fn into_response(self) -> Response<Body> {
         let t = self;
@@ -343,14 +345,17 @@ impl IntoResponse for ErrorTemplate {
             Ok(html) => {
                 let mut resp = Html(html).into_response();
                 match t.err {
-                    ResponseError::FileNotFound(_) => {
+                    ResponseError::FileNotFound(reason) => {
                         *resp.status_mut() = StatusCode::NOT_FOUND;
+                        resp.headers_mut().insert(FAIL_REASON_HEADER_NAME, reason.parse().unwrap());
                     }
-                    ResponseError::BadRequest(_) => {
+                    ResponseError::BadRequest(reason) => {
                         *resp.status_mut() = StatusCode::BAD_REQUEST;
+                        resp.headers_mut().insert(FAIL_REASON_HEADER_NAME, reason.parse().unwrap());
                     }
-                    ResponseError::InternalError(_) => {
+                    ResponseError::InternalError(reason) => {
                         *resp.status_mut() = StatusCode::INTERNAL_SERVER_ERROR;
+                        resp.headers_mut().insert(FAIL_REASON_HEADER_NAME, reason.parse().unwrap());
                     }
                 }
                 resp
