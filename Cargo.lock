@@ -104,8 +104,8 @@ checksum = "0c4b4d0bd25bd0b74681c0ad21497610ce1b7c91b1022cd21c80c6fbdd9476b0"
 
 [[package]]
 name = "axum"
-version = "0.7.5"
-source = "git+https://github.com/tokio-rs/axum.git?branch=main#680cdcba7cfa0b4fb37aba0c129ab6e4379bae3b"
+version = "0.7.6"
+source = "git+https://github.com/tokio-rs/axum.git?branch=main#068c9a3e96463ef6eb78f68ca7bc1bcc6eb638e7"
 dependencies = [
  "async-trait",
  "axum-core",
@@ -129,7 +129,7 @@ dependencies = [
  "serde_urlencoded",
  "sync_wrapper 1.0.1",
  "tokio",
- "tower 0.4.13",
+ "tower 0.5.1",
  "tower-layer",
  "tower-service",
  "tracing",
@@ -137,8 +137,8 @@ dependencies = [
 
 [[package]]
 name = "axum-core"
-version = "0.4.3"
-source = "git+https://github.com/tokio-rs/axum.git?branch=main#680cdcba7cfa0b4fb37aba0c129ab6e4379bae3b"
+version = "0.4.4"
+source = "git+https://github.com/tokio-rs/axum.git?branch=main#068c9a3e96463ef6eb78f68ca7bc1bcc6eb638e7"
 dependencies = [
  "async-trait",
  "bytes",
@@ -157,8 +157,8 @@ dependencies = [
 
 [[package]]
 name = "axum-macros"
-version = "0.4.1"
-source = "git+https://github.com/tokio-rs/axum.git?branch=main#680cdcba7cfa0b4fb37aba0c129ab6e4379bae3b"
+version = "0.4.2"
+source = "git+https://github.com/tokio-rs/axum.git?branch=main#068c9a3e96463ef6eb78f68ca7bc1bcc6eb638e7"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1090,7 +1090,6 @@ dependencies = [
  "tokio",
  "tower-layer",
  "tower-service",
- "tracing",
 ]
 
 [[package]]
@@ -1103,8 +1102,10 @@ dependencies = [
  "futures-util",
  "pin-project-lite",
  "sync_wrapper 0.1.2",
+ "tokio",
  "tower-layer",
  "tower-service",
+ "tracing",
 ]
 
 [[package]]
