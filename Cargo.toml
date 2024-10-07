@@ -31,7 +31,7 @@ mime = "0.3.17"
 base64 = "0.22.1"
 percent-encoding = "2.3.1"
 time = { version = "0.3.36", features = ["formatting"] }
-clap = { version = "4.5.18", features = ["derive"] }
+clap = { version = "4.5.19", features = ["derive"] }
 rinja = "0.3.4"
 
 [patch.crates-io]
