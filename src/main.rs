@@ -35,7 +35,13 @@ use std::str::FromStr;
 use tokio::process::Command;
 
 #[derive(Parser, Debug)]
-#[clap(name = "static-server", about = "A simple static file server written in Rust based on axum framework.", author, version, long_about = None)]
+#[clap(
+    name = "static-server",
+    about = "A simple static file server written in Rust based on axum framework.",
+    author,
+    version,
+    long_about = None
+)]
 struct Opt {
     /// set the log level
     #[clap(short = 'l', long = "log", default_value = "info")]
