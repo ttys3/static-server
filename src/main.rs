@@ -34,6 +34,8 @@ use percent_encoding::percent_decode;
 use std::str::FromStr;
 use tokio::process::Command;
 
+use std::sync::LazyLock;
+
 #[derive(Parser, Debug)]
 #[clap(
     name = "static-server",
@@ -69,6 +71,13 @@ struct StaticServerConfig {
     pub(crate) root_dir: String,
     pub(crate) thumbnail: bool,
 }
+
+// Add static variable for favicon using Lazy
+static PIXEL_FAVICON: LazyLock<Vec<u8>> = LazyLock::new(|| {
+    // one pixel favicon generated from https://png-pixel.com/
+    let one_pixel_favicon = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mPk+89QDwADvgGOSHzRgAAAAABJRU5ErkJggg==";
+    base64::prelude::BASE64_STANDARD.decode(one_pixel_favicon).unwrap()
+});
 
 #[tokio::main]
 async fn main() {
@@ -128,10 +137,7 @@ async fn health_check() -> impl IntoResponse {
 }
 
 async fn favicon() -> impl IntoResponse {
-    // one pixel favicon generated from https://png-pixel.com/
-    let one_pixel_favicon = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mPk+89QDwADvgGOSHzRgAAAAABJRU5ErkJggg==";
-    let pixel_favicon = base64::prelude::BASE64_STANDARD.decode(one_pixel_favicon).unwrap();
-    ([(header::CONTENT_TYPE, HeaderValue::from_static("image/png"))], pixel_favicon)
+    ([(header::CONTENT_TYPE, HeaderValue::from_static("image/png"))], PIXEL_FAVICON.clone())
 }
 
 async fn video_frame_thumbnail(State(cfg): State<StaticServerConfig>, Query(params): Query<HashMap<String, String>>) -> impl IntoResponse {
