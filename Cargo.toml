@@ -24,7 +24,7 @@ tokio = { version = "1.41.1", features = ["full"] }
 tracing = "0.1.40"
 tracing-subscriber = "0.3.18"
 tower = { version = "0.5.1", features = ["util"] }
-tower-http = { version = "0.6.1", features = ["fs", "trace"] }
+tower-http = { version = "0.6.2", features = ["fs", "trace"] }
 hyper = { version = "1.5.1", features = ["server", "http1", "http2"] }
 mime_guess = "2.0.5"
 mime = "0.3.17"
