@@ -27,12 +27,13 @@ use tokio::io;
 use clap::Parser;
 
 // for IpAddr::from_str
-use axum::extract::{ConnectInfo, Query};
+use axum::extract::{connect_info::ConnectInfo, Query};
 use axum::routing::get_service;
 use base64::Engine;
 use percent_encoding::percent_decode;
 use std::str::FromStr;
 use tokio::process::Command;
+use axum::serve::ListenerExt;
 
 use std::sync::LazyLock;
 
@@ -128,10 +129,14 @@ async fn main() {
 
     tracing::info!("listening on http://{}", sock_addr);
 
-    let listener = tokio::net::TcpListener::bind(sock_addr).await.unwrap();
+    let listener = tokio::net::TcpListener::bind(sock_addr).await.unwrap()
+        .tap_io(|tcp_stream| {
+            if let Err(err) = tcp_stream.set_nodelay(true) {
+                tracing::error!("failed to set TCP_NODELAY on incoming connection: {err:#}");
+            }
+        });
 
     axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
-        .tcp_nodelay(true)
         .await
         .unwrap();
 }
