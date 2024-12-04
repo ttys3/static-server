@@ -29,11 +29,11 @@ use clap::Parser;
 // for IpAddr::from_str
 use axum::extract::{connect_info::ConnectInfo, Query};
 use axum::routing::get_service;
+use axum::serve::ListenerExt;
 use base64::Engine;
 use percent_encoding::percent_decode;
 use std::str::FromStr;
 use tokio::process::Command;
-use axum::serve::ListenerExt;
 
 use std::sync::LazyLock;
 
@@ -81,9 +81,7 @@ static PIXEL_FAVICON: LazyLock<Vec<u8>> = LazyLock::new(|| {
 });
 
 // Add static variable for video thumbnail using Lazy
-static VIDEO_THUMBNAIL: LazyLock<Vec<u8>> = LazyLock::new(|| {
-    include_bytes!("../templates/assets/play.png").to_vec()
-});
+static VIDEO_THUMBNAIL: LazyLock<Vec<u8>> = LazyLock::new(|| include_bytes!("../templates/assets/play.png").to_vec());
 
 #[tokio::main]
 async fn main() {
@@ -129,16 +127,13 @@ async fn main() {
 
     tracing::info!("listening on http://{}", sock_addr);
 
-    let listener = tokio::net::TcpListener::bind(sock_addr).await.unwrap()
-        .tap_io(|tcp_stream| {
-            if let Err(err) = tcp_stream.set_nodelay(true) {
-                tracing::error!("failed to set TCP_NODELAY on incoming connection: {err:#}");
-            }
-        });
+    let listener = tokio::net::TcpListener::bind(sock_addr).await.unwrap().tap_io(|tcp_stream| {
+        if let Err(err) = tcp_stream.set_nodelay(true) {
+            tracing::error!("failed to set TCP_NODELAY on incoming connection: {err:#}");
+        }
+    });
 
-    axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
-        .await
-        .unwrap();
+    axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>()).await.unwrap();
 }
 
 // see https://kubernetes.io/docs/reference/using-api/health-checks/
@@ -232,7 +227,7 @@ async fn video_frame_thumbnail(State(cfg): State<StaticServerConfig>, Query(para
 #[debug_handler]
 async fn index_or_content(State(cfg): State<StaticServerConfig>, req: Request<Body>) -> impl IntoResponse {
     let path = req.uri().path().to_string();
-    return match ServeDir::new(&cfg.root_dir).oneshot(req).await {
+    match ServeDir::new(&cfg.root_dir).oneshot(req).await {
         Ok(res) => {
             let status = res.status();
             match status {
@@ -286,7 +281,7 @@ async fn index_or_content(State(cfg): State<StaticServerConfig>, req: Request<Bo
             cur_path: path.to_string(),
             message: format!("Unhandled error: {}", err),
         }),
-    };
+    }
 }
 
 // io::Result<Vec<DirEntry>>
