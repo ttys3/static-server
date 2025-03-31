@@ -80,8 +80,8 @@ checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 
 [[package]]
 name = "axum"
-version = "0.8.2"
-source = "git+https://github.com/tokio-rs/axum.git?branch=main#15917c6dbcb4a48707a20e9cfd021992a279a662"
+version = "0.8.3"
+source = "git+https://github.com/tokio-rs/axum.git?branch=main#cd2d5e1417e82b6fdc69c84847e438d9b37cd6a2"
 dependencies = [
  "axum-core",
  "bytes",
@@ -113,8 +113,8 @@ dependencies = [
 
 [[package]]
 name = "axum-core"
-version = "0.5.1"
-source = "git+https://github.com/tokio-rs/axum.git?branch=main#15917c6dbcb4a48707a20e9cfd021992a279a662"
+version = "0.5.2"
+source = "git+https://github.com/tokio-rs/axum.git?branch=main#cd2d5e1417e82b6fdc69c84847e438d9b37cd6a2"
 dependencies = [
  "bytes",
  "futures-core",
@@ -133,7 +133,7 @@ dependencies = [
 [[package]]
 name = "axum-macros"
 version = "0.5.0"
-source = "git+https://github.com/tokio-rs/axum.git?branch=main#15917c6dbcb4a48707a20e9cfd021992a279a662"
+source = "git+https://github.com/tokio-rs/axum.git?branch=main#cd2d5e1417e82b6fdc69c84847e438d9b37cd6a2"
 dependencies = [
  "proc-macro2",
  "quote",
