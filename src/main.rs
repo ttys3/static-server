@@ -4,7 +4,7 @@ use std::net::SocketAddr;
 use tower_http::trace::TraceLayer;
 
 use crate::ResponseError::{BadRequest, FileNotFound, InternalError};
-use rinja::Template;
+use askama::Template;
 
 use axum::{
     body::Body,
@@ -328,11 +328,11 @@ async fn visit_dir_one_level(path: &Path, prefix: &str) -> io::Result<Vec<FileIn
 }
 
 mod filters {
-    pub(crate) fn datetime(ts: &i64) -> ::rinja::Result<String> {
+    pub(crate) fn datetime(ts: &i64) -> ::askama::Result<String> {
         if let Ok(format) = time::format_description::parse("[year]-[month]-[day] [hour]:[minute]:[second] UTC") {
             return Ok(time::OffsetDateTime::from_unix_timestamp(*ts).unwrap().format(&format).unwrap());
         }
-        Err(rinja::Error::Fmt)
+        Err(askama::Error::Fmt)
     }
 }
 
