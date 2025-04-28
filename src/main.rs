@@ -83,6 +83,33 @@ static PIXEL_FAVICON: LazyLock<Vec<u8>> = LazyLock::new(|| {
 // Add static variable for video thumbnail using Lazy
 static VIDEO_THUMBNAIL: LazyLock<Vec<u8>> = LazyLock::new(|| include_bytes!("../templates/assets/play.png").to_vec());
 
+static IS_VAAPI_SUPPORTED: LazyLock<bool> = LazyLock::new(check_vaapi_support);
+
+fn check_vaapi_support() -> bool {
+    tracing::info!("Checking available ffmpeg hwaccels...");
+    match std::process::Command::new("ffmpeg")
+        .arg("-hwaccels")
+        .output() // Execute and capture output
+    {
+        Ok(output) => {
+            if output.status.success() {
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                let supported = stdout.lines().any(|line| line.trim() == "vaapi");
+                tracing::info!("VA-API available in ffmpeg -hwaccels: {}", supported);
+                supported
+            } else {
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                tracing::error!("ffmpeg -hwaccels failed with status: {}\nStderr: {}", output.status, stderr);
+                false
+            }
+        }
+        Err(e) => {
+            tracing::error!("Failed to execute ffmpeg -hwaccels: {}", e);
+            false // ffmpeg command failed (e.g., not found), assume no support
+        }
+    }
+}
+
 #[tokio::main]
 async fn main() {
     let opt = Opt::parse();
