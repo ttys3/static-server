@@ -172,10 +172,11 @@ async fn video_frame_thumbnail(State(cfg): State<StaticServerConfig>, Query(para
         .arg("-an")
         // Get the data from stdin
         .arg("-noautorotate")
-        .arg("-i")
-        .arg(&file_path)
+        // Seek to the specified timestamp *before* opening the input file for faster seeking
         .arg("-ss")
         .arg(format!("00:00:{}.0", t))
+        .arg("-i")
+        .arg(&file_path)
         .arg("-vf")
         .arg(format!("scale={}:-1", width))
         .arg("-frames:v")
