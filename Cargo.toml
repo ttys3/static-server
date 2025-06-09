@@ -30,7 +30,7 @@ mime = "0.3.17"
 base64 = "0.22.1"
 percent-encoding = "2.3.1"
 time = { version = "0.3.41", features = ["formatting"] }
-clap = { version = "4.5.38", features = ["derive"] }
+clap = { version = "4.5.40", features = ["derive"] }
 askama = "0.14.0"
 
 [patch.crates-io]
