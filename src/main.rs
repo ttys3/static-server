@@ -356,7 +356,7 @@ async fn visit_dir_one_level(path: &Path, prefix: &str) -> io::Result<Vec<FileIn
 }
 
 mod filters {
-    pub(crate) fn datetime(ts: &i64) -> ::askama::Result<String> {
+    pub(crate) fn datetime(ts: &i64, _values: &dyn askama::Values) -> ::askama::Result<String> {
         if let Ok(format) = time::format_description::parse("[year]-[month]-[day] [hour]:[minute]:[second] UTC") {
             return Ok(time::OffsetDateTime::from_unix_timestamp(*ts).unwrap().format(&format).unwrap());
         }
